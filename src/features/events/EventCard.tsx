@@ -4,7 +4,8 @@
 //
 // - The title links to /events/:eventId. Its ::after covers the card, so the whole card is clickable,
 //   while the link (with its visible focus ring) is still the only tab stop.
-// - Top panel: a tint and icon per category (categoryVisuals), with the category name in a pill.
+// - Top: EventImage (the category cover until events have pictures). The cover's word is decorative,
+//   so the category is also written for screen readers. The sign-up badge sits top left, clear of the icon.
 // - mySignup is only filled when the request carried a token, so the badge appears only when signed in.
 // - Seats: "N seats left" with a bar of seats taken, or a badge in its seat-state tone (lib/labels):
 //   "Only N seats left" (warning, at LOW_SEATS or fewer) or "Full · waitlist open" (neutral) with the
@@ -24,7 +25,7 @@ import {
 } from "../../lib/labels";
 import { cn } from "../../lib/cn";
 import { StatusBadge } from "../../components/ui/status-badge";
-import { CATEGORY_VISUALS } from "./categoryVisuals";
+import { EventImage } from "../../components/event-image/EventImage";
 
 export type EventCardProps = {
   event: FairEvent;
@@ -35,8 +36,6 @@ export function EventCard({ event, className }: EventCardProps) {
   const { seats, seatsTaken, seatsAvailable, waitingCount, mySignup } = event;
   const state = seatState(event);
   const takenPercent = seats > 0 ? Math.min(100, Math.max(0, (seatsTaken / seats) * 100)) : 0;
-  const visual = CATEGORY_VISUALS[event.category];
-  const Icon = visual.icon;
 
   const seatsLeft = `${seatsAvailable} ${seatsAvailable === 1 ? "seat" : "seats"} left`;
 
@@ -48,18 +47,17 @@ export function EventCard({ event, className }: EventCardProps) {
         className,
       )}
     >
-      <div className={cn("relative flex h-32 items-center justify-center", visual.className)}>
-        <Icon aria-hidden="true" className="size-14" strokeWidth={1.75} />
-        <div className="absolute inset-x-3 top-3 flex flex-wrap items-start justify-between gap-2">
-          <span className="rounded-full bg-(--color-surface) px-3 py-1 text-xs font-semibold text-(--color-text)">
-            {CATEGORY_LABELS[event.category]}
-          </span>
-          {mySignup && (
-            <StatusBadge tone={SIGNUP_STATUS_TONES[mySignup.status]} className="rounded-full px-3 py-1 font-semibold">
-              {signupStatusLabel(mySignup)}
-            </StatusBadge>
-          )}
-        </div>
+      <div className="relative">
+        <EventImage category={event.category} />
+        <p className="sr-only">Category: {CATEGORY_LABELS[event.category]}</p>
+        {mySignup && (
+          <StatusBadge
+            tone={SIGNUP_STATUS_TONES[mySignup.status]}
+            className="absolute top-3 left-3 rounded-full px-3 py-1 font-semibold"
+          >
+            {signupStatusLabel(mySignup)}
+          </StatusBadge>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col p-5">

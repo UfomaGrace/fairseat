@@ -97,17 +97,22 @@
   --color-seat-offered: #c24a0b;
   --color-seat-free-border: #8a8a8a;
 
-  /* Event card category panels. Replaced by CategoryCover. */
-  --color-cat-tech-bg: #e1edff;
-  --color-cat-tech: #1d4ed8;
-  --color-cat-design-bg: #fce4f0;
-  --color-cat-design: #9d174d;
-  --color-cat-product-bg: #ece8fd;
-  --color-cat-product: #5b21b6;
-  --color-cat-career-bg: #dff3ea;
-  --color-cat-career: #0e7a57;
-  --color-cat-business-bg: #fdf0de;
-  --color-cat-business: #9a4a0b;
-  --color-cat-community-bg: #dcf1f7;
-  --color-cat-community: #0e6a85;
+  /*
+    Category covers (CategoryCover). The word is --color-text on each tint (14:1 or more),
+    and --color-on-dark on Business. Decorative: the cover is aria-hidden.
+  */
+  --color-cover-tech: #e4e9ec;
+  --color-cover-design: #f6d9c8;
+  --color-cover-product: #e9e2d2;
+  --color-cover-career: #dde6d8;
+  --color-cover-business: #111111;
+  --color-cover-community: #ebdae0;
+
+  /* Avatar pairs (background / initials): 18.9:1, 8.2:1, 10.5:1. */
+  --color-avatar-1-bg: #111111;
+  --color-avatar-1-text: #ffffff;
+  --color-avatar-2-bg: #f0d0bd;
+  --color-avatar-2-text: #5a2a0a;
+  --color-avatar-3-bg: #dde6d8;
+  --color-avatar-3-text: #24331f;
 }

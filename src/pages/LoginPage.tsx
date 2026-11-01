@@ -155,6 +155,8 @@ export default function LoginPage() {
                       label="Password"
                       type="password"
                       autoComplete="current-password"
+                      revealable
+                      capsLockHint
                       required
                     />
 
