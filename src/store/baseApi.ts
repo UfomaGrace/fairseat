@@ -2,7 +2,7 @@
 // operations from contract/openapi.yaml with injectEndpoints, named by operationId:
 //
 //   features/auth/sessionApi.ts      getHealth, createSession
-//   features/events/eventsApi.ts     listEvents, createEvent, getEvent, updateEvent, cancelEvent
+//   features/events/eventsApi.ts     listEvents, listEventPages, createEvent, getEvent, updateEvent, cancelEvent
 //   features/signups/signupsApi.ts   createSignup, cancelSignup, acceptOffer, listMySignups
 //   features/notices/noticesApi.ts   listMyNotices
 //

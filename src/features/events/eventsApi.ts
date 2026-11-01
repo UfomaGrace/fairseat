@@ -1,8 +1,16 @@
 // eventsApi: browsing events (public) and managing them (organisers and admins).
+//
+// - listEvents: one page at a time (the organiser list pages with Previous / Next).
+// - listEventPages: the same GET /events as an infinite query, for "Show more events" on Discover.
+//   The filters are the cache key; each page's offset is a page param. When "EventList" is
+//   invalidated (e.g. after booking), RTK Query refetches every loaded page in order.
 import type { EventCreate, EventPage, EventQuery, EventUpdate, FairEvent } from "../../api/types";
 import { baseApi } from "../../store/baseApi";
 
 const id = encodeURIComponent;
+
+/** GET /events filters without the offset: listEventPages supplies that page by page. */
+export type EventPagesQuery = Omit<EventQuery, "offset">;
 
 export const eventsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -12,6 +20,26 @@ export const eventsApi = baseApi.injectEndpoints({
       providesTags: (result) => [
         "EventList",
         ...(result?.items ?? []).map((event) => ({ type: "Event" as const, id: event.id })),
+      ],
+    }),
+
+    /** GET /events, page after page. The next offset is where the last page ended, until `total` is reached. */
+    listEventPages: build.infiniteQuery<EventPage, EventPagesQuery, number>({
+      infiniteQueryOptions: {
+        initialPageParam: 0,
+        getNextPageParam: (lastPage) => {
+          const next = lastPage.offset + lastPage.items.length;
+          return lastPage.items.length > 0 && next < lastPage.total ? next : undefined;
+        },
+      },
+      query: ({ queryArg, pageParam }) => ({
+        path: "/events",
+        query: { ...queryArg, offset: pageParam },
+        auth: "optional",
+      }),
+      providesTags: (result) => [
+        "EventList",
+        ...(result?.pages ?? []).flatMap((page) => page.items).map((event) => ({ type: "Event" as const, id: event.id })),
       ],
     }),
 
@@ -43,6 +71,7 @@ export const eventsApi = baseApi.injectEndpoints({
 
 export const {
   useListEventsQuery,
+  useListEventPagesInfiniteQuery,
   useCreateEventMutation,
   useGetEventQuery,
   useUpdateEventMutation,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDateTime } from "./format";
+import { formatDateTime, formatRelativeDateTime, lagosDaysFromToday } from "./format";
 
 describe("formatDateTime", () => {
   it("shows the Lagos day and 24-hour time", () => {
@@ -22,5 +22,34 @@ describe("formatDateTime", () => {
 
   it("returns unparseable input as is", () => {
     expect(formatDateTime("soon")).toBe("soon");
+  });
+});
+
+// 1 Nov 2026, 22:30 in Lagos (21:30 UTC).
+const NOW = Date.parse("2026-11-01T21:30:00Z");
+
+describe("formatRelativeDateTime", () => {
+  it("says Today and Tomorrow by the Lagos date", () => {
+    expect(formatRelativeDateTime("2026-11-01T22:00:00Z", NOW)).toBe("Today · 11:00 PM");
+    // 23:30 UTC is already 2 Nov in Lagos.
+    expect(formatRelativeDateTime("2026-11-01T23:30:00Z", NOW)).toBe("Tomorrow · 12:30 AM");
+    expect(formatRelativeDateTime("2026-11-02T07:00:00Z", NOW)).toBe("Tomorrow · 8:00 AM");
+  });
+
+  it("names the day further out, with the year only when it differs", () => {
+    expect(formatRelativeDateTime("2026-11-05T18:00:00Z", NOW)).toBe("Thu, 5 Nov · 7:00 PM");
+    expect(formatRelativeDateTime("2027-01-08T11:00:00Z", NOW)).toBe("Fri, 8 Jan 2027 · 12:00 PM");
+  });
+
+  it("returns unparseable input as is", () => {
+    expect(formatRelativeDateTime("soon", NOW)).toBe("soon");
+  });
+});
+
+describe("lagosDaysFromToday", () => {
+  it("counts Lagos calendar days, not 24-hour blocks", () => {
+    expect(lagosDaysFromToday("2026-11-01T22:59:00Z", NOW)).toBe(0);
+    expect(lagosDaysFromToday("2026-11-01T23:00:00Z", NOW)).toBe(1);
+    expect(lagosDaysFromToday("2026-11-08T22:59:00Z", NOW)).toBe(7);
   });
 });

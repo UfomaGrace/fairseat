@@ -1,7 +1,7 @@
 // AppRoutes: every page. All inside Layout (header + footer) except /login, which draws
 // its own frame (logo + "Explore events" only).
 //
-// - Public: /events, /events/:eventId, /login
+// - Public: /events, /events/:eventId, /how-it-works, /login
 // - ATTENDEE: /me/…   ORGANISER/ADMIN: /organiser/…
 //   Each guarded group is one parent route: RequireAuth + RequireRole wrap an <Outlet />,
 //   and the child routes render into that Outlet.
@@ -17,6 +17,7 @@ import CreateEventPage from "../pages/CreateEventPage";
 import EditEventPage from "../pages/EditEventPage";
 import EventDetailPage from "../pages/EventDetailPage";
 import EventsPage from "../pages/EventsPage";
+import HowItWorksPage from "../pages/HowItWorksPage";
 import LoginPage from "../pages/LoginPage";
 import MyEventsPage from "../pages/MyEventsPage";
 import NoticesPage from "../pages/NoticesPage";
@@ -52,8 +53,9 @@ function AppRoutes() {
         <Route index element={<Navigate to="/events" replace />} />
 
         {/* Public */}
-        <Route path="events" element={<Titled title="Events"><EventsPage /></Titled>} />
+        <Route path="events" element={<Titled title="Discover"><EventsPage /></Titled>} />
         <Route path="events/:eventId" element={<Titled title="Event details"><EventDetailPage /></Titled>} />
+        <Route path="how-it-works" element={<Titled title="How it works"><HowItWorksPage /></Titled>} />
 
         {/* ATTENDEE */}
         <Route element={<Guarded roles={ATTENDEE_ROLES} />}>
