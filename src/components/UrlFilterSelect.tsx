@@ -10,8 +10,8 @@
 
 import { useSearchParams } from "react-router";
 import type { LabelOption } from "../lib/labels";
-import { cn } from "../shared/cn";
-import { FormField } from "../shared/ui/form-field";
+import { cn } from "../lib/cn";
+import { FormField } from "../components/ui/form-field";
 
 export type UrlFilterSelectProps = {
   label: string;
@@ -25,7 +25,7 @@ export type UrlFilterSelectProps = {
 };
 
 const selectClasses = cn(
-  "h-11 w-full rounded-[var(--radius-md)] border border-(--color-border-input) bg-(--color-surface) px-3 text-sm",
+  "h-11 w-full rounded-[var(--radius-md)] border border-(--color-border-input) bg-(--color-bg) px-3 text-sm",
   "text-(--color-text) font-[family-name:var(--font-sans)]",
   "focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)] focus-visible:outline-offset-(--focus-ring-offset)",
   "disabled:cursor-not-allowed disabled:opacity-50",

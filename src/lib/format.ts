@@ -1,21 +1,24 @@
 // Format: dates as people read them. Times always show in Africa/Lagos, whatever the
-// device's own time zone.
+// device's own time zone. One format everywhere: "Sat 7 Nov 2026 · 10:00", 24-hour.
 
 const DATE_TIME_FORMAT = new Intl.DateTimeFormat("en-GB", {
   weekday: "short",
   day: "numeric",
   month: "short",
   year: "numeric",
-  hour: "numeric",
+  hour: "2-digit",
   minute: "2-digit",
-  hour12: true,
+  hourCycle: "h23",
   timeZone: "Africa/Lagos",
 });
 
-/** "2026-11-07T15:00:00Z" → "Sat 7 Nov 2026, 4:00 pm". Unparseable input is returned as is. */
+/** "2026-11-07T09:00:00Z" → "Sat 7 Nov 2026 · 10:00". Unparseable input is returned as is. */
 export function formatDateTime(isoDateTime: string): string {
   const time = Date.parse(isoDateTime);
-  return Number.isNaN(time) ? isoDateTime : DATE_TIME_FORMAT.format(time);
+  if (Number.isNaN(time)) return isoDateTime;
+  // Built from parts so the separators don't depend on the browser's en-GB punctuation.
+  const parts = Object.fromEntries(DATE_TIME_FORMAT.formatToParts(time).map((part) => [part.type, part.value]));
+  return `${parts.weekday} ${parts.day} ${parts.month} ${parts.year} · ${parts.hour}:${parts.minute}`;
 }
 
 /** True for a real calendar day written "YYYY-MM-DD" (the yaml's `format: date`). "2026-02-30" is false. */

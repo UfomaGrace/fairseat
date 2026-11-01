@@ -17,10 +17,10 @@ import { FormAlert } from "../components/form/FormAlert";
 import { MySignupItem } from "../features/signups/MySignupItem";
 import { useListMySignupsQuery } from "../features/signups/signupsApi";
 import { conflictMessage } from "../lib/labels";
-import { cn } from "../shared/cn";
-import { EmptyState } from "../shared/ui/empty-state";
-import { ErrorState } from "../shared/ui/error-state";
-import { Skeleton } from "../shared/ui/skeleton";
+import { cn } from "../lib/cn";
+import { EmptyState } from "../components/ui/empty-state";
+import { ErrorState } from "../components/ui/error-state";
+import { Skeleton } from "../components/ui/skeleton";
 
 const OFFER_POLL_MS = 30_000;
 

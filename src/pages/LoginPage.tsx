@@ -19,10 +19,10 @@ import { applyApiError } from "../components/form/applyApiError";
 import { FormAlert } from "../components/form/FormAlert";
 import { FormikField } from "../components/form/FormikField";
 import { emailAddress, password } from "../lib/validation";
-import { Button } from "../shared/ui/button";
-import { Card, CardBody, CardHeader } from "../shared/ui/card";
-import { FormField } from "../shared/ui/form-field";
-import { Select, type SelectOption } from "../shared/ui/select";
+import { Button } from "../components/ui/button";
+import { Card, CardBody, CardHeader } from "../components/ui/card";
+import { FormField } from "../components/ui/form-field";
+import { Select, type SelectOption } from "../components/ui/select";
 import { useCreateSessionMutation } from "../features/auth/sessionApi";
 
 type LoginValues = { email: string; password: string };
@@ -132,7 +132,7 @@ export default function LoginPage() {
             {notice && !formError && (
               <div
                 role="status"
-                className="mb-5 rounded-md border border-l-4 border-(--color-border) border-l-(--color-primary) bg-(--color-surface) p-3 text-sm"
+                className="mb-5 rounded-md border border-l-4 border-(--color-border) border-l-(--color-primary) bg-(--color-bg) p-3 text-sm"
               >
                 {notice}
               </div>
@@ -159,7 +159,7 @@ export default function LoginPage() {
                     />
 
                     {IS_MOCK && (
-                      <div className="rounded-md border border-dashed border-(--color-warning) bg-(--color-warning-subtle) p-3">
+                      <div className="rounded-md border border-dashed border-(--color-warning) bg-(--color-copper-wash) p-3">
                         <p className="mb-2 text-sm font-semibold text-(--color-text)">
                           Mock server only: simulated sign-in
                         </p>

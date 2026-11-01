@@ -13,7 +13,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import type { ApiError } from "../../api/client";
-import { cn } from "../../shared/cn";
+import { cn } from "../../lib/cn";
 
 export type FormAlertProps = {
   error: ApiError | null;
@@ -45,7 +45,7 @@ export function FormAlert({ error, message, title, issues, children, className }
       role="alert"
       tabIndex={-1}
       className={cn(
-        "rounded-md border border-l-4 border-(--color-danger) bg-(--color-surface) p-4 text-sm",
+        "rounded-md border border-l-4 border-(--color-danger) bg-(--color-bg) p-4 text-sm",
         "focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)] focus-visible:outline-offset-(--focus-ring-offset)",
         className,
       )}

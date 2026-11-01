@@ -25,10 +25,10 @@ import { useAuth } from "../../auth/useAuth";
 import { FormAlert } from "../../components/form/FormAlert";
 import { conflictMessage } from "../../lib/labels";
 import { useNow } from "../../lib/useNow";
-import { cn } from "../../shared/cn";
-import { Button } from "../../shared/ui/button";
-import { ConfirmDialog } from "../../shared/ui/dialog";
-import { useToast, type ToastOptions } from "../../shared/ui/toast";
+import { cn } from "../../lib/cn";
+import { Button } from "../../components/ui/button";
+import { ConfirmDialog } from "../../components/ui/dialog";
+import { useToast, type ToastOptions } from "../../components/ui/toast";
 import { baseApi } from "../../store/baseApi";
 import { useAppDispatch } from "../../store/hooks";
 import { useGetEventQuery } from "../events/eventsApi";
@@ -95,7 +95,7 @@ export function SignupActions({ event }: { event: FairEvent }) {
       case "WAITING":
         return (
           <>
-            <p className="text-sm font-medium text-(--color-info)">
+            <p className="text-sm font-medium text-(--color-text)">
               {signup.waitingPosition
                 ? `You're #${signup.waitingPosition} on the waitlist.`
                 : "You're on the waitlist."}{" "}

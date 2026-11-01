@@ -11,7 +11,7 @@
 import type { ReactNode } from "react";
 import { Navigate, useNavigate } from "react-router";
 import type { Role } from "../api/types";
-import { Button } from "../shared/ui/button";
+import { Button } from "../components/ui/button";
 import { ROLE_LABEL } from "./roles";
 import { useAuth } from "./useAuth";
 

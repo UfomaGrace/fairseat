@@ -16,12 +16,12 @@ import { useAuth } from "../auth/useAuth";
 import { OrganiserEventRow } from "../features/events/OrganiserEventRow";
 import { useListEventsQuery } from "../features/events/eventsApi";
 import { PAGE_SIZE, useEventFilters, type EventFilters } from "../features/events/useEventFilters";
-import { cn } from "../shared/cn";
-import { Button } from "../shared/ui/button";
-import { Checkbox } from "../shared/ui/checkbox";
-import { EmptyState } from "../shared/ui/empty-state";
-import { ErrorState } from "../shared/ui/error-state";
-import { Skeleton } from "../shared/ui/skeleton";
+import { cn } from "../lib/cn";
+import { Button } from "../components/ui/button";
+import { Checkbox } from "../components/ui/checkbox";
+import { EmptyState } from "../components/ui/empty-state";
+import { ErrorState } from "../components/ui/error-state";
+import { Skeleton } from "../components/ui/skeleton";
 
 const CREATE_PATH = "/organiser/events/new";
 
@@ -78,7 +78,7 @@ export default function OrganiserEventsPage() {
       return (
         <ul className="grid gap-4">
           {Array.from({ length: 4 }, (_, i) => (
-            <li key={i} className="rounded-lg border border-(--color-border) bg-(--color-surface) p-4">
+            <li key={i} className="rounded-lg border border-(--color-border) bg-(--color-bg) p-4">
               <Skeleton lines={2} />
             </li>
           ))}
@@ -182,7 +182,7 @@ export default function OrganiserEventsPage() {
         <CreateEventLink />
       </header>
 
-      <section aria-labelledby="options-heading" className="rounded-lg border border-(--color-border) bg-(--color-surface) p-4">
+      <section aria-labelledby="options-heading" className="rounded-lg border border-(--color-border) bg-(--color-bg) p-4">
         <h2 id="options-heading" className="sr-only">
           Options
         </h2>

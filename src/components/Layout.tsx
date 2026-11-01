@@ -7,6 +7,7 @@
 // - Below md the links sit behind a Menu button. The menu remembers the page it was
 //   opened on, so moving to another page (link, back button) closes it.
 // - Pages render their own <main>, so the skip-link target here is a <div>.
+// - Colours, fonts and the focus ring come from styles/tokens.css. Sign in is drawn as a black button.
 
 import { Menu, X } from "lucide-react";
 import { useRef, useState, type KeyboardEvent } from "react";
@@ -14,19 +15,22 @@ import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { IS_MOCK } from "../api/client";
 import type { Role } from "../api/types";
 import { useAuth } from "../auth/useAuth";
-import { Button } from "../shared/ui/button";
-import { cn } from "../shared/cn";
+import { Button } from "../components/ui/button";
+import { cn } from "../lib/cn";
+import { FairSeatLogo } from "./FairSeatLogo";
 
 interface NavItem {
   to: string;
   label: string;
   /** Only active on this exact path, not on paths below it. */
   end?: boolean;
+  /** Draw as a white button rather than a plain link (Sign in). */
+  button?: boolean;
 }
 
 const VISITOR_NAV: readonly NavItem[] = [
   { to: "/events", label: "Events" },
-  { to: "/login", label: "Sign in" },
+  { to: "/login", label: "Sign in", button: true },
 ];
 
 const ORGANISER_NAV: readonly NavItem[] = [
@@ -72,7 +76,7 @@ export function Layout() {
       <a
         href="#main"
         className={cn(
-          "sr-only z-50 rounded-(--radius-md) bg-(--color-surface) px-4 py-3 font-semibold text-(--color-text)",
+          "sr-only z-50 rounded-(--radius-md) bg-(--color-bg) px-4 py-3 font-semibold text-(--color-text)",
           "focus:not-sr-only focus:fixed focus:top-2 focus:left-2",
           focusRing,
         )}
@@ -80,17 +84,13 @@ export function Layout() {
         Skip to main content
       </a>
 
-      {/* The header is dark, so the focus ring switches to the light "on" colour here. */}
       <header
         onKeyDown={handleKeyDown}
-        className="bg-(--color-secondary) text-(--color-on-secondary) [--color-focus:var(--color-on-secondary)]"
+        className="border-b border-(--color-header-border) bg-(--color-bg) text-(--color-text)"
       >
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 sm:px-8">
-          <Link
-            to="/events"
-            className={cn("flex min-h-11 items-center rounded-(--radius-sm) text-xl font-bold tracking-tight", focusRing)}
-          >
-            FairSeat
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-8 md:py-4">
+          <Link to="/events" className={cn("flex min-h-11 items-center rounded-(--radius-sm)", focusRing)}>
+            <FairSeatLogo size={28} withWordmark />
           </Link>
 
           <Button
@@ -99,7 +99,7 @@ export function Layout() {
             aria-expanded={menuOpen}
             aria-controls="site-menu"
             onClick={() => setMenuOpenOn(menuOpen ? null : location.pathname)}
-            className="ml-auto min-h-11 text-(--color-on-secondary) hover:bg-(--color-secondary-hover) md:hidden"
+            className="ml-auto min-h-11 md:hidden"
           >
             {menuOpen ? <X aria-hidden="true" className="size-5" /> : <Menu aria-hidden="true" className="size-5" />}
             Menu
@@ -109,12 +109,12 @@ export function Layout() {
           <div
             id="site-menu"
             className={cn(
-              "w-full flex-col gap-3 pb-3 md:flex md:w-auto md:flex-1 md:flex-row md:items-center md:pb-0",
+              "w-full flex-col gap-3 pb-3 md:ml-auto md:flex md:w-auto md:flex-row md:items-center md:pb-0",
               menuOpen ? "flex" : "hidden",
             )}
           >
             <nav aria-label="Main">
-              <ul className="flex flex-col gap-1 md:flex-row">
+              <ul className="flex flex-col gap-2 md:flex-row md:items-center">
                 {nav.map((item) => (
                   <li key={item.to}>
                     <NavLink
@@ -124,11 +124,14 @@ export function Layout() {
                       state={item.to === "/login" ? { from: location } : undefined}
                       onClick={() => setMenuOpenOn(null)}
                       className={cn(
-                        "flex min-h-11 items-center rounded-(--radius-md) px-3 text-sm font-medium whitespace-nowrap",
-                        "text-(--color-on-secondary-muted) hover:bg-(--color-secondary-hover) hover:text-(--color-on-secondary)",
-                        // Active: brighter, bold and underlined, so it isn't shown by colour alone.
-                        "aria-[current=page]:bg-(--color-secondary-hover) aria-[current=page]:font-semibold aria-[current=page]:text-(--color-on-secondary)",
-                        "aria-[current=page]:underline aria-[current=page]:decoration-2 aria-[current=page]:underline-offset-4",
+                        "flex min-h-11 items-center rounded-(--radius-md) px-4 font-semibold whitespace-nowrap",
+                        item.button
+                          ? "bg-(--color-primary) text-(--color-on-primary) hover:bg-(--color-primary-hover)"
+                          : cn(
+                              "text-(--color-text-muted) hover:bg-(--color-surface) hover:text-(--color-text)",
+                              // Active: a filled grey pill in ink, so it isn't shown by colour alone.
+                              "aria-[current=page]:bg-(--color-surface) aria-[current=page]:text-(--color-text)",
+                            ),
                         focusRing,
                       )}
                     >
@@ -140,7 +143,7 @@ export function Layout() {
             </nav>
 
             {user && (
-              <div className="flex items-center gap-3 border-t border-(--color-secondary-hover) pt-3 md:ml-auto md:border-0 md:pt-0">
+              <div className="flex items-center gap-3 border-t border-(--color-header-border) pt-3 md:ml-auto md:border-0 md:pt-0">
                 <p className="text-sm font-medium">{user.displayName}</p>
                 <Button variant="secondary" className="min-h-11" onClick={() => signOut("You've signed out.")}>
                   Sign out
@@ -157,10 +160,13 @@ export function Layout() {
       </div>
 
       <footer className="border-t border-(--color-border) bg-(--color-surface)">
-        <p className="mx-auto max-w-7xl px-4 py-4 text-sm text-(--color-text-muted) sm:px-8">
-          Demonstration product. All data is fictional.
-          {IS_MOCK && " This build is running against a mock server (VITE_MOCK=true), so data changes are not saved."}
-        </p>
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-6 sm:px-8">
+          <FairSeatLogo size={22} withWordmark />
+          <p className="text-sm text-(--color-text-muted)">
+            Demonstration product. All data is fictional.
+            {IS_MOCK && " This build is running against a mock server (VITE_MOCK=true), so data changes are not saved."}
+          </p>
+        </div>
       </footer>
     </div>
   );

@@ -11,10 +11,10 @@
 
 import { useField } from "formik";
 import type { ReactNode, TextareaHTMLAttributes } from "react";
-import { cn } from "../../shared/cn";
-import { FormField, type FieldControlProps } from "../../shared/ui/form-field";
-import { Input, type InputProps } from "../../shared/ui/input";
-import { Select, type SelectOption } from "../../shared/ui/select";
+import { cn } from "../../lib/cn";
+import { FormField, type FieldControlProps } from "../../components/ui/form-field";
+import { Input, type InputProps } from "../../components/ui/input";
+import { Select, type SelectOption } from "../../components/ui/select";
 
 // Props FormikField sets itself, so callers can't pass them.
 type ManagedProps =
@@ -62,16 +62,16 @@ export type FormikFieldProps = InputFieldProps | TextareaFieldProps | SelectFiel
 // 44px minimum touch height for every control.
 const controlHeight = "h-11";
 
-// shared/ui/textarea.tsx is still an empty stub, so this mirrors the shared Input's styling.
+// components/ui/textarea.tsx is still an empty stub, so this mirrors the shared Input's styling.
 const textareaClasses = cn(
   "min-h-24 w-full rounded-[var(--radius-md)] px-3 py-2.5 text-sm resize-y",
-  "bg-[var(--color-surface)] text-[var(--color-text)] font-[family-name:var(--font-sans)]",
+  "bg-[var(--color-bg)] text-[var(--color-text)] font-[family-name:var(--font-sans)]",
   "border border-[var(--color-border-input)]",
   "placeholder:text-[var(--color-text-muted)]",
   "focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)]",
   "focus-visible:[outline-offset:var(--focus-ring-offset)]",
   "aria-[invalid=true]:border-2 aria-[invalid=true]:border-[var(--color-danger)]",
-  "disabled:cursor-not-allowed disabled:bg-[var(--color-surface-sunken)] disabled:opacity-60",
+  "disabled:cursor-not-allowed disabled:bg-[var(--color-surface)] disabled:opacity-60",
 );
 
 export function FormikField(props: FormikFieldProps) {

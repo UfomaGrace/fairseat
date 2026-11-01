@@ -4,7 +4,7 @@
 //   (say a new Category), TypeScript fails here until it gets a label.
 
 import type { ApiErrorCode, Category, NoticeKind, Signup, SignupStatus } from "../api/types";
-import type { StatusBadgeTone } from "../shared/ui/status-badge";
+import type { StatusBadgeTone } from "../components/ui/status-badge";
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   TECH: "Tech",

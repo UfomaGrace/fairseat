@@ -13,8 +13,8 @@ import { CalendarDays, Pencil, UserRound, Users } from "lucide-react";
 import { Link } from "react-router";
 import type { FairEvent } from "../../api/types";
 import { formatDateTime } from "../../lib/format";
-import { cn } from "../../shared/cn";
-import { StatusBadge, type StatusBadgeTone } from "../../shared/ui/status-badge";
+import { cn } from "../../lib/cn";
+import { StatusBadge, type StatusBadgeTone } from "../../components/ui/status-badge";
 
 type EventPhase = "upcoming" | "started" | "ended" | "cancelled";
 
@@ -42,7 +42,7 @@ function eventPhase(event: FairEvent): EventPhase {
 
 const editLink = cn(
   "inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium",
-  "border border-(--color-border-input) bg-(--color-surface) text-(--color-text) hover:bg-(--color-surface-hover)",
+  "border border-(--color-border-input) bg-(--color-bg) text-(--color-text) hover:bg-(--color-surface)",
   "focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)] focus-visible:outline-offset-(--focus-ring-offset)",
 );
 
@@ -57,7 +57,7 @@ export function OrganiserEventRow({ event, showOrganiser = false }: OrganiserEve
   const canEdit = phase === "upcoming" || phase === "started";
 
   return (
-    <article className="flex min-w-0 flex-col gap-3 rounded-lg border border-(--color-border) bg-(--color-surface) p-4 sm:flex-row sm:items-center sm:justify-between">
+    <article className="flex min-w-0 flex-col gap-3 rounded-lg border border-(--color-border) bg-(--color-bg) p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 grid gap-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <h3 className="min-w-0 text-lg font-semibold leading-snug wrap-break-word text-(--color-text)">

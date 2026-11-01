@@ -9,8 +9,8 @@ import { Link, useNavigate } from "react-router";
 import type { EventCreate } from "../api/types";
 import { EventForm } from "../features/events/EventForm";
 import { useCreateEventMutation } from "../features/events/eventsApi";
-import { cn } from "../shared/cn";
-import { useToast } from "../shared/ui/toast";
+import { cn } from "../lib/cn";
+import { useToast } from "../components/ui/toast";
 
 const focusRing =
   "focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)] focus-visible:outline-offset-(--focus-ring-offset)";

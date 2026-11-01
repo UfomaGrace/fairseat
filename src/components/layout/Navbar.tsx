@@ -2,6 +2,7 @@
 import { Link, NavLink, useLocation } from "react-router";
 import { ROLE_LABEL } from "../../auth/roles";
 import { useAuth } from "../../auth/useAuth";
+import { FairSeatLogo } from "../FairSeatLogo";
 
 const navItems = [
   { label: "Discover", to: "/events" },
@@ -15,36 +16,13 @@ function Navbar() {
   const location = useLocation();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-50 border-b border-(--color-header-border) bg-(--color-bg)">
       <nav
         aria-label="Main navigation"
         className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-8"
       >
-        <Link to="/events" className="flex shrink-0 items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0F2928] text-white">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              className="h-5 w-5"
-            >
-              <path
-                d="M5 4h14v5a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V4Z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M7 12v3m10-3v3M5 20h14M8 15h8l2 5H6l2-5Z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <span className="text-xl font-bold tracking-tight text-slate-950">
-            FairSeat
-          </span>
+        <Link to="/events" className="flex min-h-11 shrink-0 items-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-(--color-focus)">
+          <FairSeatLogo size={28} withWordmark />
         </Link>
 
         <div className="hidden items-center gap-7 md:flex">
@@ -53,10 +31,10 @@ function Navbar() {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `text-sm font-medium transition ${
+                `inline-flex min-h-11 items-center rounded-sm text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-(--color-focus) aria-[current=page]:underline aria-[current=page]:decoration-(--color-copper) aria-[current=page]:decoration-2 aria-[current=page]:underline-offset-8 ${
                   isActive
-                    ? "text-teal-800"
-                    : "text-slate-600 hover:text-slate-950"
+                    ? "text-(--color-text)"
+                    : "text-(--color-text-muted) hover:text-(--color-text)"
                 }`
               }
             >
@@ -70,7 +48,7 @@ function Navbar() {
             type="button"
             aria-label="Notifications"
             title="Notifications"
-            className="rounded-full p-2 text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
+            className="inline-flex size-11 items-center justify-center rounded-full text-(--color-text-muted) transition hover:bg-(--color-surface) hover:text-(--color-text) focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-(--color-focus)"
           >
             <svg
               aria-hidden="true"
@@ -90,13 +68,13 @@ function Navbar() {
 
           {user ? (
             <>
-              <p className="text-sm text-slate-600">
-                <span className="font-medium text-slate-950">{user.displayName}</span> · {ROLE_LABEL[user.role]}
+              <p className="text-sm text-(--color-text-muted)">
+                <span className="font-medium text-(--color-text)">{user.displayName}</span> · {ROLE_LABEL[user.role]}
               </p>
               <button
                 type="button"
                 onClick={() => signOut("You've signed out.")}
-                className="min-h-11 rounded-full border border-slate-300 px-5 text-sm font-semibold text-slate-800 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:ring-offset-2"
+                className="min-h-11 rounded-full border border-(--color-border-input) px-5 text-sm font-semibold text-(--color-text) transition hover:bg-(--color-surface) focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-(--color-focus)"
               >
                 Sign out
               </button>
@@ -106,7 +84,7 @@ function Navbar() {
               to="/login"
               // Come back to this page after signing in.
               state={{ from: location }}
-              className="inline-flex min-h-11 items-center rounded-full bg-[#0F2928] px-5 text-sm font-semibold text-white transition hover:bg-[#17413F] focus:outline-none focus:ring-2 focus:ring-teal-700 focus:ring-offset-2"
+              className="inline-flex min-h-11 items-center rounded-full bg-(--color-primary) px-5 text-sm font-semibold text-(--color-on-primary) transition hover:bg-(--color-primary-hover) focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-(--color-focus)"
             >
               Sign in
             </Link>
@@ -116,7 +94,7 @@ function Navbar() {
         <Link
           to="/events"
           aria-label="Open event discovery"
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 md:hidden"
+          className="inline-flex min-h-11 items-center rounded-lg border border-(--color-border) px-3 text-sm font-medium text-(--color-text) focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-(--color-focus) md:hidden"
         >
           Events
         </Link>
