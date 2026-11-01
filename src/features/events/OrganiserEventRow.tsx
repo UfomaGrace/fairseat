@@ -25,9 +25,10 @@ const PHASE_LABELS: Record<EventPhase, string> = {
   cancelled: "Cancelled",
 };
 
+// Success green is for feedback messages only, so a started event is neutral.
 const PHASE_TONES: Record<EventPhase, StatusBadgeTone> = {
   upcoming: "info",
-  started: "success",
+  started: "neutral",
   ended: "neutral",
   cancelled: "danger",
 };
