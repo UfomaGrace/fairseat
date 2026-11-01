@@ -1,4 +1,5 @@
-// AppRoutes: every page, all inside Layout (header + footer).
+// AppRoutes: every page. All inside Layout (header + footer) except /login, which draws
+// its own frame (logo + "Explore events" only).
 //
 // - Public: /events, /events/:eventId, /login
 // - ATTENDEE: /me/…   ORGANISER/ADMIN: /organiser/…
@@ -45,13 +46,14 @@ function Guarded({ roles }: { roles: readonly Role[] }) {
 function AppRoutes() {
   return (
     <Routes>
+      <Route path="login" element={<Titled title="Sign in"><LoginPage /></Titled>} />
+
       <Route element={<Layout />}>
         <Route index element={<Navigate to="/events" replace />} />
 
         {/* Public */}
         <Route path="events" element={<Titled title="Events"><EventsPage /></Titled>} />
         <Route path="events/:eventId" element={<Titled title="Event details"><EventDetailPage /></Titled>} />
-        <Route path="login" element={<Titled title="Sign in"><LoginPage /></Titled>} />
 
         {/* ATTENDEE */}
         <Route element={<Guarded roles={ATTENDEE_ROLES} />}>

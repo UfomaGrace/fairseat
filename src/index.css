@@ -30,3 +30,29 @@ body {
     letter-spacing: -0.045em;
   }
 }
+
+/* Sign-in page seats: the pattern fades in, and the copper seat pulses once. Both are
+   switched off with motion-reduce:animate-none where they're used. */
+@keyframes seat-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes seat-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--color-copper-soft);
+  }
+  45% {
+    transform: scale(1.18);
+    box-shadow: 0 0 0 8px var(--color-copper-soft);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
