@@ -22,12 +22,12 @@
 //   the page; the Filter bar is what announces result counts.
 // - Centred. Long titles and descriptions wrap instead of overflowing.
 //
-// Text contrast with the default tokens: title 13.8:1, description 4.6:1 on
-// --color-bg (14.8:1 and 4.9:1 on --color-surface).
+// Text contrast with the default tokens: title 17.7:1, description 7.7:1 on
+// --color-bg (7.0:1 on --color-surface).
 
 import { forwardRef, type HTMLAttributes, type MouseEvent, type ReactNode } from "react";
 import { Button } from "./button";
-import { cn } from "../cn";
+import { cn } from "../../lib/cn";
 
 export type EmptyStateHeadingLevel = "h2" | "h3" | "h4" | "h5" | "h6";
 
@@ -56,24 +56,24 @@ export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(function E
       ref={ref}
       className={cn(
         "flex w-full min-w-0 flex-col items-center gap-3 px-4 py-10 text-center",
-        "font-[family-name:var(--font-sans)] text-[var(--color-text)]",
-        "break-words [overflow-wrap:anywhere]",
+        "font-sans text-(--color-text)",
+        "wrap-break-word",
         className,
       )}
       {...rest}
     >
       {icon && (
         <span
-          className="inline-flex shrink-0 text-[var(--color-text-muted)]"
+          className="inline-flex shrink-0 text-(--color-text-muted)"
           aria-hidden="true"
         >
           {icon}
         </span>
       )}
-      <Heading className="max-w-full text-lg font-semibold leading-snug text-[var(--color-text)]">
+      <Heading className="max-w-full text-lg font-semibold leading-snug text-(--color-text)">
         {title}
       </Heading>
-      <p className="max-w-prose text-sm leading-6 text-[var(--color-text-muted)]">
+      <p className="max-w-prose text-sm leading-6 text-(--color-text-muted)">
         {description}
       </p>
       {action && (

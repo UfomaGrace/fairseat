@@ -29,12 +29,12 @@
 //   title always says in words that something went wrong.
 // - Centred. Long titles and descriptions wrap instead of overflowing.
 //
-// Text contrast with the default tokens: title 6.2:1, description 4.6:1 on
-// --color-bg (6.6:1 and 4.9:1 on --color-surface).
+// Text contrast with the default tokens: title 6.5:1, description 7.7:1 on
+// --color-bg (5.9:1 and 7.0:1 on --color-surface).
 
 import { forwardRef, type HTMLAttributes, type MouseEvent, type ReactNode } from "react";
 import { Button } from "./button";
-import { cn } from "../cn";
+import { cn } from "../../lib/cn";
 
 export type ErrorStateHeadingLevel = "h2" | "h3" | "h4" | "h5" | "h6";
 
@@ -74,8 +74,8 @@ export const ErrorState = forwardRef<HTMLDivElement, ErrorStateProps>(function E
       ref={ref}
       className={cn(
         "flex w-full min-w-0 flex-col items-center gap-3 px-4 py-10 text-center",
-        "font-[family-name:var(--font-sans)] text-[var(--color-text)]",
-        "break-words [overflow-wrap:anywhere]",
+        "font-sans text-(--color-text)",
+        "wrap-break-word",
         className,
       )}
       {...rest}
@@ -83,16 +83,16 @@ export const ErrorState = forwardRef<HTMLDivElement, ErrorStateProps>(function E
     >
       {icon && (
         <span
-          className="inline-flex shrink-0 text-[var(--color-danger)]"
+          className="inline-flex shrink-0 text-(--color-danger)"
           aria-hidden="true"
         >
           {icon}
         </span>
       )}
-      <Heading className="max-w-full text-lg font-semibold leading-snug text-[var(--color-danger)]">
+      <Heading className="max-w-full text-lg font-semibold leading-snug text-(--color-danger)">
         {title}
       </Heading>
-      <p className="max-w-prose text-sm leading-6 text-[var(--color-text-muted)]">
+      <p className="max-w-prose text-sm leading-6 text-(--color-text-muted)">
         {description}
       </p>
       {onRetry && (

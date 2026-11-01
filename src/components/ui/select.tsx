@@ -15,7 +15,7 @@
 import * as RadixSelect from "@radix-ui/react-select"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
 import { forwardRef } from "react"
-import { cn } from "../cn"
+import { cn } from "../../lib/cn"
 
 const ANY_VALUE = "__tesa_any__"
 
@@ -83,7 +83,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
         {...triggerAria}
         className={cn(
           "flex h-10 w-full min-w-0 items-center justify-between gap-2 rounded-[var(--radius-md)] border border-[var(--color-border-input)]",
-          "bg-[var(--color-surface)] px-3 text-left text-[var(--color-text)]",
+          "bg-[var(--color-bg)] px-3 text-left text-[var(--color-text)]",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]",
           "data-[placeholder]:text-[var(--color-text-muted)]",
           "aria-[invalid=true]:border-2 aria-[invalid=true]:border-[var(--color-danger)]",
@@ -107,7 +107,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
           collisionPadding={8}
           className={cn(
             "relative z-50 max-h-[var(--radix-select-content-available-height)] min-w-[var(--radix-select-trigger-width)]",
-            "max-w-[calc(100vw-16px)] overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] shadow-lg",
+            "max-w-[calc(100vw-16px)] overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] shadow-lg",
             contentClassName,
           )}
         >
@@ -139,7 +139,7 @@ function SelectItem({ value, label, disabled }: SelectOption) {
       className={cn(
         // min-h-10 keeps every option above the 24×24 px target size, with room for touch.
         "relative flex min-h-10 cursor-default select-none items-center rounded-[var(--radius-md)] py-2 pl-8 pr-3 outline-none",
-        "data-[highlighted]:bg-[var(--color-surface-hover)]",
+        "data-[highlighted]:bg-[var(--color-surface)]",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       )}
     >

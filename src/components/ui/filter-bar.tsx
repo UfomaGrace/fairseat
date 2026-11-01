@@ -16,7 +16,7 @@
  * Requires: FormField, Input and Button from Muizz's set.
  */
 import { forwardRef, useRef, type ReactNode } from "react"
-import { cn } from "../cn"
+import { cn } from "../../lib/cn"
 import { Button } from "./button"
 import { FormField } from "./form-field"
 import { Input } from "./input"

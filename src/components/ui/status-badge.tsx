@@ -16,11 +16,11 @@
 //   the current state; it doesn't announce changes. Use Toast for that.
 // - Long labels wrap inside their container instead of overflowing.
 //
-// Text contrast on each tone's tint: neutral 4.9:1, info 5.9:1,
-// success 6.3:1, warning 6.3:1, danger 5.8:1.
+// Text contrast with the default tokens: neutral 16.1:1, info 6.7:1,
+// success 5.0:1, warning 4.9:1, danger 6.5:1.
 
 import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
-import { cn } from "../cn";
+import { cn } from "../../lib/cn";
 
 export type StatusBadgeTone = "neutral" | "info" | "success" | "warning" | "danger";
 
@@ -30,18 +30,15 @@ export type StatusBadgeProps = HTMLAttributes<HTMLSpanElement> & {
   children: ReactNode;
 };
 
-// Tinted: status colour as text on its pale *-subtle tint, with a soft edge in the
-// same hue. Calmer than solid fills in dense tables.
+// tokens.css has no separate info colour, so info uses the primary role.
+// Neutral sits on --color-surface, the same as Card, so it gets a visible edge.
 const toneClasses: Record<StatusBadgeTone, string> = {
   neutral:
-    "bg-[var(--color-surface)] text-[var(--color-text-muted)] border-[var(--color-border)]",
-  info: "bg-[var(--color-info-subtle)] text-[var(--color-info)] border-[color-mix(in_srgb,var(--color-info)_35%,transparent)]",
-  success:
-    "bg-[var(--color-success-subtle)] text-[var(--color-success)] border-[color-mix(in_srgb,var(--color-success)_35%,transparent)]",
-  warning:
-    "bg-[var(--color-warning-subtle)] text-[var(--color-warning)] border-[color-mix(in_srgb,var(--color-warning)_35%,transparent)]",
-  danger:
-    "bg-[var(--color-danger-subtle)] text-[var(--color-danger)] border-[color-mix(in_srgb,var(--color-danger)_35%,transparent)]",
+    "bg-[var(--color-surface)] text-[var(--color-text)] border-[var(--color-border-input)]",
+  info: "bg-[var(--color-primary)] text-[var(--color-on-primary)] border-transparent",
+  success: "bg-[var(--color-success)] text-[var(--color-on-success)] border-transparent",
+  warning: "bg-[var(--color-warning)] text-[var(--color-on-warning)] border-transparent",
+  danger: "bg-[var(--color-danger)] text-[var(--color-on-danger)] border-transparent",
 };
 
 export const StatusBadge = forwardRef<HTMLSpanElement, StatusBadgeProps>(function StatusBadge(
