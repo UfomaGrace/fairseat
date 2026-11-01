@@ -15,7 +15,7 @@ import { useAuth } from "../auth/useAuth";
 import { useGetEventQuery } from "../features/events/eventsApi";
 import { SignupActions } from "../features/signups/SignupActions";
 import { formatDateTime } from "../lib/format";
-import { CATEGORY_LABELS, SIGNUP_STATUS_TONES, signupStatusLabel } from "../lib/labels";
+import { CATEGORY_LABELS, SIGNUP_STATUS_TONES, seatState, signupStatusLabel } from "../lib/labels";
 import { useNow } from "../lib/useNow";
 import { cn } from "../lib/cn";
 import { ErrorState } from "../components/ui/error-state";
@@ -198,10 +198,11 @@ export default function EventDetailPage() {
               <Users aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-(--color-text-muted)" />
               <div>
                 <dt className="font-semibold text-(--color-text-muted)">Seats</dt>
+                {/* Copper only for low seats (4.9:1 on white); open and full stay ink. */}
                 <dd
                   className={cn(
                     "mt-0.5 font-medium",
-                    event.seatsAvailable > 0 ? "text-(--color-success)" : "text-(--color-warning)",
+                    seatState(event) === "low" ? "text-(--color-warning)" : "text-(--color-text)",
                   )}
                 >
                   {seatsLeftText(event)}

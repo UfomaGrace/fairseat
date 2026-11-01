@@ -12,8 +12,12 @@
   - On --color-bg (#ffffff): text 18.9:1, muted text 7.5:1, copper 4.9:1,
     success 5.3:1, danger 6.5:1, focus ring 4.9:1.
   - On --color-surface (#f6f6f5): text 17.5:1, muted text 6.9:1.
-  - White on primary 18.9:1, on danger 6.5:1, on success 5.3:1, on warning 6.8:1.
-  - Warning text on copper-wash 6.0:1, danger on error-wash 5.7:1.
+  - White on primary 18.9:1, on danger 6.5:1, on success 5.3:1, on warning (copper) 4.9:1.
+  - Warning (copper) text on white 4.9:1. On copper-wash only 4.3:1, so there it is large
+    text only (24px, or 18.5px bold); small text on copper-wash uses --color-copper-deep (6.0:1).
+  - Danger on error-wash 5.7:1.
+  Tones: warning (copper) is for offers and low seats. Success (green) is for feedback
+  messages only, never a seat status.
   - Copper focus ring on the dark sections 3.9:1 (3:1 needed).
   - --color-border-input (#d4d4d4) is 1.5:1, below the 3:1 asked of a control's edge.
     A FairSeat design decision: every input keeps a visible label above it.
@@ -44,7 +48,7 @@
   --color-success: #1e7b4f;
   --color-on-success: #ffffff;
 
-  --color-warning: #9e3b07;
+  --color-warning: #c24a0b;
   --color-on-warning: #ffffff;
 
   /* Focus ring */
@@ -92,10 +96,6 @@
   --color-seat-going: #111111;
   --color-seat-offered: #c24a0b;
   --color-seat-free-border: #8a8a8a;
-
-  /* "Full · waitlist open" pill, and the low-seats warning text */
-  --color-full-bg: #fbeee6;
-  --color-full-text: #9e3b07;
 
   /* Event card category panels. Replaced by CategoryCover. */
   --color-cat-tech-bg: #e1edff;

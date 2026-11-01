@@ -6,21 +6,25 @@
 //   while the link (with its visible focus ring) is still the only tab stop.
 // - Top panel: a tint and icon per category (categoryVisuals), with the category name in a pill.
 // - mySignup is only filled when the request carried a token, so the badge appears only when signed in.
-// - Seats: "N seats left" (amber text at LOW_SEATS or fewer) with a bar of seats taken, or, when full,
-//   "Full · waitlist open" with the waiting count (only when someone is waiting). The bar is hidden from screen readers: the text says it.
+// - Seats: "N seats left" with a bar of seats taken, or a badge in its seat-state tone (lib/labels):
+//   "Only N seats left" (warning, at LOW_SEATS or fewer) or "Full · waitlist open" (neutral) with the
+//   waiting count (only when someone is waiting). The bar is hidden from screen readers: the text says it.
 // - Times show in Africa/Lagos (lib/format).
 
 import { MapPin } from "lucide-react";
 import { Link } from "react-router";
 import type { FairEvent } from "../../api/types";
 import { formatDateTime } from "../../lib/format";
-import { CATEGORY_LABELS, SIGNUP_STATUS_TONES, signupStatusLabel } from "../../lib/labels";
+import {
+  CATEGORY_LABELS,
+  SEAT_STATE_TONES,
+  SIGNUP_STATUS_TONES,
+  seatState,
+  signupStatusLabel,
+} from "../../lib/labels";
 import { cn } from "../../lib/cn";
 import { StatusBadge } from "../../components/ui/status-badge";
 import { CATEGORY_VISUALS } from "./categoryVisuals";
-
-/** At this many seats left or fewer, the count turns amber: "Only 3 seats left". */
-const LOW_SEATS = 5;
 
 export type EventCardProps = {
   event: FairEvent;
@@ -29,8 +33,7 @@ export type EventCardProps = {
 
 export function EventCard({ event, className }: EventCardProps) {
   const { seats, seatsTaken, seatsAvailable, waitingCount, mySignup } = event;
-  const isFull = seatsAvailable <= 0;
-  const isLow = !isFull && seatsAvailable <= LOW_SEATS;
+  const state = seatState(event);
   const takenPercent = seats > 0 ? Math.min(100, Math.max(0, (seatsTaken / seats) * 100)) : 0;
   const visual = CATEGORY_VISUALS[event.category];
   const Icon = visual.icon;
@@ -84,11 +87,11 @@ export function EventCard({ event, className }: EventCardProps) {
 
         <div className="mt-auto pt-5">
           <div className="border-t border-(--color-border) pt-4">
-            {isFull ? (
+            {state === "full" ? (
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="rounded-full bg-(--color-full-bg) px-3 py-1 text-sm font-semibold text-(--color-full-text)">
+                <StatusBadge tone={SEAT_STATE_TONES.full} className="rounded-full px-3 py-1 text-sm font-semibold">
                   Full · waitlist open
-                </span>
+                </StatusBadge>
                 {waitingCount > 0 && (
                   <span className="text-sm text-(--color-text-muted)">{waitingCount} waiting</span>
                 )}
@@ -96,9 +99,13 @@ export function EventCard({ event, className }: EventCardProps) {
             ) : (
               <>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className={cn("font-semibold", isLow ? "text-(--color-full-text)" : "text-(--color-text)")}>
-                    {isLow ? `Only ${seatsLeft}` : seatsLeft}
-                  </span>
+                  {state === "low" ? (
+                    <StatusBadge tone={SEAT_STATE_TONES.low} className="rounded-full px-3 py-1 text-sm font-semibold">
+                      Only {seatsLeft}
+                    </StatusBadge>
+                  ) : (
+                    <span className="font-semibold text-(--color-text)">{seatsLeft}</span>
+                  )}
                   <span className="text-sm text-(--color-text-muted)">{seats} seats</span>
                 </div>
                 <div aria-hidden="true" className="mt-3 h-1.5 overflow-hidden rounded-full bg-(--color-border)">

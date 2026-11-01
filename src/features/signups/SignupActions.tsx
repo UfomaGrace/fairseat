@@ -88,7 +88,7 @@ export function SignupActions({ event }: { event: FairEvent }) {
       case "GOING":
         return (
           <>
-            <p className="text-sm font-medium text-(--color-success)">You have a seat at this event.</p>
+            <p className="text-sm font-medium text-(--color-text)">You have a seat at this event.</p>
             <CancelSeatButton signup={signup} eventId={event.id} {...callbacks} />
           </>
         );
