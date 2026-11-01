@@ -21,7 +21,7 @@ export default defineConfig([
   },
   {
     // This exports a hook next to its components on purpose.
-    files: ['src/shared/ui/toast.tsx'],
+    files: ['src/components/ui/toast.tsx'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

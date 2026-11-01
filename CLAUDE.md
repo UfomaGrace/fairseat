@@ -8,7 +8,7 @@ src/features/*), Formik + Yup. Contract: contract/openapi.yaml (Fisayo's). Mock:
 Rules:
 - Types come from src/api/schema.d.ts (generated). No hand-written models.
 - No `any`, no `as unknown as`, no useEffect for fetching, no React Router loaders.
-- Use src/shared/ui/ components. Dates shown in Africa/Lagos.
+- Use src/components/ui/ components (copies of interface-eng-shared-components; only src/styles/tokens.css is changed). Dates shown in Africa/Lagos.
 - Errors show "Reference: <requestId>".
 - A11y: labels on inputs, role="alert" on errors, visible focus, min-h-11, works at phone width.
 - Must pass npm run typecheck, lint, test.

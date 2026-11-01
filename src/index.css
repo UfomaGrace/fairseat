@@ -1,1 +1,32 @@
 @import "tailwindcss";
+
+/* Headings use tight tracking (FairSeat: -0.03em to -0.045em). Colours live in src/styles/tokens.css. */
+@theme {
+  --tracking-tight: -0.035em;
+  --tracking-tighter: -0.045em;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+/*
+  In the base layer so Tailwind tracking-* utilities on a heading still win. No colour here:
+  headings inherit it, so they stay white inside dark sections such as the intro.
+*/
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    letter-spacing: var(--tracking-heading);
+  }
+
+  h1 {
+    letter-spacing: -0.045em;
+  }
+}

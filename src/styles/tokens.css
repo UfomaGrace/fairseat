@@ -5,76 +5,109 @@
   into your product, change the VALUES to your own look. Never rename a variable,
   or the components stop picking it up.
 
-  Values follow the approved BloodLink palette. Contrast (WCAG 2.2 AA):
-  on --color-surface (#ffffff): text 14.8:1, muted text 4.9:1, primary 5.5:1,
-  danger 6.6:1, success 7.1:1, warning 7.1:1, info 6.7:1, input border 4.9:1.
-  On --color-bg (#f5f8f8): muted text 4.6:1, primary / focus ring 5.1:1.
-  Status text on its own *-subtle tint stays at 5.7:1 or more.
-  --color-border (#cbd5d7) is 1.5:1, so it is for decorative dividers only;
-  form controls use --color-border-input.
-  If you change a colour, re-check it (4.5:1 for text, 3:1 for borders and focus).
+  FairSeat values. Black is the primary action colour. Copper is only for links,
+  highlights, low-seat warnings and offers, never a large background.
 
-  Hover shades and tints are mixed from the palette with color-mix(), so no
-  colour outside the palette is introduced.
+  Contrast (WCAG 2.2 AA):
+  - On --color-bg (#ffffff): text 18.9:1, muted text 7.5:1, copper 4.9:1,
+    success 5.3:1, danger 6.5:1, focus ring 4.9:1.
+  - On --color-surface (#f6f6f5): text 17.5:1, muted text 6.9:1.
+  - White on primary 18.9:1, on danger 6.5:1, on success 5.3:1, on warning 6.8:1.
+  - Warning text on copper-wash 6.0:1, danger on error-wash 5.7:1.
+  - Copper focus ring on the dark sections 3.9:1 (3:1 needed).
+  - --color-border-input (#d4d4d4) is 1.5:1, below the 3:1 asked of a control's edge.
+    A FairSeat design decision: every input keeps a visible label above it.
+    Checkboxes return to 3:1 once the shared --checkbox-border-color hook lands.
+  If you change a colour, re-check it (4.5:1 for text, 3:1 for borders and focus).
 */
 
 :root {
   /* Surfaces */
-  --color-bg: #f5f8f8;              /* page background */
-  --color-surface: #ffffff;         /* cards, forms, tables, dialogs, inputs */
-  --color-surface-hover: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
-  --color-surface-sunken: color-mix(in srgb, var(--color-secondary) 4%, var(--color-surface)); /* table headers, inset panels */
-  --color-border: #cbd5d7;          /* decorative dividers, card edges */
-  --color-border-input: #647477;    /* form control edges, must stay 3:1 or more */
+  --color-bg: #ffffff;              /* page, cards, inputs */
+  --color-surface: #f6f6f5;         /* page sections, chips, hover states */
+  --color-border: #e6e6e6;          /* decorative dividers, card edges */
+  --color-border-input: #d4d4d4;    /* form control edges (see contrast note) */
 
   /* Text */
-  --color-text: #182b2d;
-  --color-text-muted: #647477;
+  --color-text: #111111;            /* primary text: titles, body, input values */
+  --color-text-muted: #555555;      /* secondary text: dates, hosts, hints, captions */
 
   /* Roles: each filled colour has an "on" colour for text placed on top of it */
-  --color-primary: #0f766e;
-  --color-primary-hover: color-mix(in srgb, var(--color-primary) 82%, black);
+  --color-primary: #111111;
+  --color-primary-hover: #2a2a2a;
   --color-on-primary: #ffffff;
 
-  /* Structure: the app header */
-  --color-secondary: #243746;
-  --color-on-secondary: #ffffff;
-  --color-on-secondary-muted: color-mix(in srgb, var(--color-on-secondary) 75%, var(--color-secondary)); /* 7.7:1 */
-  --color-secondary-hover: color-mix(in srgb, var(--color-on-secondary) 10%, var(--color-secondary));
-
-  /* Brand accent: crimson, used sparingly (logo, active nav, emergency urgency) */
-  --color-accent: #b9384d;
-
-  /* Urgent urgency dot. 3.6:1 on surface: fine for a graphic (3:1), too light for text. */
-  --color-caution: #b77928;
-
-  /* Status. Badges use the colour as text on its *-subtle tint. */
-  --color-danger: #b42318;
-  --color-danger-hover: color-mix(in srgb, var(--color-danger) 85%, black);
+  --color-danger: #b4232f;
+  --color-danger-hover: #931c26;
   --color-on-danger: #ffffff;
-  --color-danger-subtle: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
 
-  --color-success: #166534;
+  --color-success: #1e7b4f;
   --color-on-success: #ffffff;
-  --color-success-subtle: color-mix(in srgb, var(--color-success) 8%, var(--color-surface));
 
-  --color-warning: #92400e;
+  --color-warning: #9e3b07;
   --color-on-warning: #ffffff;
-  --color-warning-subtle: color-mix(in srgb, var(--color-warning) 8%, var(--color-surface));
 
-  --color-info: #1d4ed8;
-  --color-on-info: #ffffff;
-  --color-info-subtle: color-mix(in srgb, var(--color-info) 8%, var(--color-surface));
-
-  /* Focus ring. Dark areas (the header) override this with --color-on-secondary. */
-  --color-focus: var(--color-primary);
+  /* Focus ring */
+  --color-focus: #c24a0b;
   --focus-ring-width: 2px;
-  --focus-ring-offset: 2px;
+  --focus-ring-offset: 3px;
 
-  /* Shape */
-  --radius-sm: 4px;
-  --radius-md: 8px;
+  /* Shape. --radius is read by Dialog and Toast. */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius: var(--radius-md);
 
-  /* Type: system fonts by default. Each team swaps in its own font here. */
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Type */
+  --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* ---- FairSeat-only ---- */
+
+  /* Copper: links, highlights, low-seat warnings and offers. Small tints only. */
+  --color-copper: #c24a0b;
+  --color-copper-deep: #9e3b07;
+  --color-copper-soft: #f0d0bd;
+  --color-copper-wash: #fbeee6;
+
+  /* Error tint behind danger text, and the input error ring once its hook lands. */
+  --color-error-wash: #fcebec;
+
+  /* Headings */
+  --tracking-heading: -0.035em;
+
+  /* Cards in the event lists */
+  --radius-card: 14px;
+
+  /* The header: white with a hairline under it. */
+  --color-header-border: #f0f0ef;
+
+  /* Dark sections: intro, "How it works" panel, featured event card */
+  --color-dark: #111111;
+  --color-dark-panel: #2a2a2a;
+  --color-dark-border: #3b3b3b;
+  --color-on-dark: #ffffff;
+  --color-on-dark-muted: #d4d4d4;
+  --color-on-dark-accent: #f0d0bd;
+
+  /* Seat grid and legend (decorative). Offers are copper. */
+  --color-seat-going: #111111;
+  --color-seat-offered: #c24a0b;
+  --color-seat-free-border: #8a8a8a;
+
+  /* "Full · waitlist open" pill, and the low-seats warning text */
+  --color-full-bg: #fbeee6;
+  --color-full-text: #9e3b07;
+
+  /* Event card category panels. Replaced by CategoryCover. */
+  --color-cat-tech-bg: #e1edff;
+  --color-cat-tech: #1d4ed8;
+  --color-cat-design-bg: #fce4f0;
+  --color-cat-design: #9d174d;
+  --color-cat-product-bg: #ece8fd;
+  --color-cat-product: #5b21b6;
+  --color-cat-career-bg: #dff3ea;
+  --color-cat-career: #0e7a57;
+  --color-cat-business-bg: #fdf0de;
+  --color-cat-business: #9a4a0b;
+  --color-cat-community-bg: #dcf1f7;
+  --color-cat-community: #0e6a85;
 }
