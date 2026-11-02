@@ -5,8 +5,8 @@
 //   a sheet filling the rest. From 768px: seats fill the page and the panel is centred, with a
 //   24px halo in the page colour so no seat touches it. From 1100px: a "seat opened up" note.
 // - Formik + Yup check the fields before anything is sent (rules from lib/validation).
-// - POST /sessions (useCreateSessionMutation) → signIn(session) → ?returnTo= if it's a safe
-//   internal path, else the page a guard sent us from (state.from), else /events.
+// - POST /sessions (useCreateSessionMutation) → signIn(session) → validated in-app return state,
+//   unless another account signs in; header/manual sign-in always lands on /events.
 //   Already signed in → straight there.
 // - 401 INVALID_CREDENTIALS: an error under Password, the email kept, focus on Password. The
 //   error stays until either field changes (validate below), so a blur doesn't wipe it.
@@ -18,11 +18,11 @@
 
 import { Form, Formik, useFormikContext, type FormikHelpers } from "formik";
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router";
+import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import * as Yup from "yup";
 import { ApiError, IS_MOCK, toApiError } from "../api/client";
 import type { Role, Session } from "../api/types";
-import { safeReturnPath } from "../auth/returnPath";
+import { loginDestination } from "../auth/returnPath";
 import { useAuth } from "../auth/useAuth";
 import { FairSeatLogo } from "../components/FairSeatLogo";
 import { applyApiError } from "../components/form/applyApiError";
@@ -46,8 +46,6 @@ const LOGIN_FIELDS = ["email", "password"] as const satisfies readonly (keyof Lo
 const initialValues: LoginValues = { email: "", password: "" };
 
 const loginSchema = Yup.object({ email: emailAddress(), password: password() });
-
-const DEFAULT_RETURN = "/events";
 
 const WRONG_CREDENTIALS = "That email and password don't match. Try again.";
 const OFFLINE = "You're offline. Check your connection and try again.";
@@ -80,17 +78,6 @@ function withMockRole(session: Session, role: MockRole): Session {
   };
 }
 
-/** The page a guard (RequireAuth, the header's Sign in) sent us from, as "/path?query#hash". */
-function pathFromState(state: unknown): string | null {
-  if (typeof state !== "object" || state === null || !("from" in state)) return null;
-  const from = state.from;
-  if (typeof from !== "object" || from === null || !("pathname" in from)) return null;
-  const pathname = typeof from.pathname === "string" ? from.pathname : "";
-  const search = "search" in from && typeof from.search === "string" ? from.search : "";
-  const hash = "hash" in from && typeof from.hash === "string" ? from.hash : "";
-  return pathname + search + hash;
-}
-
 const focusRing =
   "focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-offset-(--focus-ring-offset) focus-visible:outline-(--color-focus) focus-visible:outline-solid";
 
@@ -99,7 +86,6 @@ export default function LoginPage() {
   const [createSession] = useCreateSessionMutation();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const [formError, setFormError] = useState<ApiError | null>(null);
   const [unmapped, setUnmapped] = useState<Record<string, string>>({});
   // The email + password the service just rejected; see validate below.
@@ -107,10 +93,7 @@ export default function LoginPage() {
   const [mockRole, setMockRole] = useState<MockRole>("ATTENDEE");
   const formRef = useRef<HTMLFormElement>(null);
 
-  const target =
-    safeReturnPath(searchParams.get("returnTo")) ?? safeReturnPath(pathFromState(location.state)) ?? DEFAULT_RETURN;
-
-  if (user) return <Navigate to={target} replace />;
+  if (user) return <Navigate to={loginDestination(location.state, user.id)} replace />;
 
   // Runs alongside the Yup schema (Formik merges both), so the "don't match" error survives
   // blur and re-validation until the user changes the email or the password.
@@ -128,7 +111,7 @@ export default function LoginPage() {
       // unwrap() returns the data, or throws the endpoint's { status, data } error.
       const session = await createSession({ email: values.email.trim(), password: values.password }).unwrap();
       signIn(IS_MOCK ? withMockRole(session, mockRole) : session);
-      navigate(target, { replace: true });
+      navigate(loginDestination(location.state, session.user.id), { replace: true });
     } catch (e) {
       const error = toApiError(e);
       if (error.code === "INVALID_CREDENTIALS") {
@@ -165,7 +148,7 @@ export default function LoginPage() {
       </a>
       <SeatPattern />
 
-      <header className="flex items-center justify-between gap-4 px-4 py-2 md:px-8 md:py-5">
+      <header className="sticky top-0 z-40 flex h-[68px] items-center justify-between gap-4 border-b border-(--color-header-border) bg-(--color-bg) px-4 md:px-8">
         <Link to="/events" className={cn("flex min-h-11 items-center rounded-(--radius-sm)", focusRing)}>
           <FairSeatLogo size={24} withWordmark />
         </Link>

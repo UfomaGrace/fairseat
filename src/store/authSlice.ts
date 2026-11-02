@@ -13,8 +13,25 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { Session, User } from "../api/types";
 import { isRole } from "../auth/roles";
 
-const STORAGE_KEY = "fairseat.session";
+export const STORAGE_KEY = "fairseat.session";
+export const TAB_USER_KEY = "fairseat.tab-user";
 export const SESSION_ENDED_NOTICE = "Your session ended. Sign in again to continue.";
+
+export function rememberTabUser(userId: string): void {
+  try {
+    sessionStorage.setItem(TAB_USER_KEY, userId);
+  } catch {
+    // The per-tab hint is best-effort; the shared session remains in localStorage.
+  }
+}
+
+export function clearTabUser(): void {
+  try {
+    sessionStorage.removeItem(TAB_USER_KEY);
+  } catch {
+    // The per-tab hint is best-effort; the shared session remains in localStorage.
+  }
+}
 
 export interface AuthState {
   token: string | null;
@@ -22,6 +39,8 @@ export interface AuthState {
   user: User | null;
   /** Why the user was signed out, e.g. "Your session expired." */
   notice: string | null;
+  /** The account that just expired, used to validate its saved return path. */
+  signedOutUserId: string | null;
 }
 
 /** The part of the store this file knows about (avoids importing store.ts in a loop). */
@@ -67,14 +86,23 @@ export function loadSession(): Session | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    if (!isSession(parsed)) {
+    const parsed = parseSession(raw);
+    if (!parsed) {
       localStorage.removeItem(STORAGE_KEY);
       return null;
     }
     return parsed;
   } catch {
     // No storage (private mode, tests) or bad JSON: start signed out.
+    return null;
+  }
+}
+
+export function parseSession(raw: string): Session | null {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return isSession(parsed) ? parsed : null;
+  } catch {
     return null;
   }
 }
@@ -99,6 +127,7 @@ function initialAuthState(): AuthState {
     expiresAt: session?.expiresAt ?? null,
     user: session?.user ?? null,
     notice: null,
+    signedOutUserId: null,
   };
 }
 
@@ -112,8 +141,10 @@ const authSlice = createSlice({
       state.expiresAt = action.payload.expiresAt;
       state.user = action.payload.user;
       state.notice = null;
+      state.signedOutUserId = null;
     },
     signedOut(state, action: PayloadAction<string | undefined>) {
+      state.signedOutUserId = state.user?.id ?? state.signedOutUserId;
       state.token = null;
       state.expiresAt = null;
       state.user = null;

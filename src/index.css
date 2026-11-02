@@ -12,6 +12,10 @@ body {
   font-family: var(--font-sans);
 }
 
+:where([id], h1) {
+  scroll-margin-top: 68px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

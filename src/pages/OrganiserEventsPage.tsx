@@ -10,7 +10,7 @@ import { ConfirmDialog } from "../components/ui/dialog";
 import { EmptyState } from "../components/ui/empty-state";
 import { ErrorState } from "../components/ui/error-state";
 import { Skeleton } from "../components/ui/skeleton";
-import { useToast } from "../components/ui/toast";
+import { useFairSeatToast } from "../lib/useFairSeatToast";
 import { useCancelEventMutation, useListEventPagesInfiniteQuery, useListEventsQuery } from "../features/events/eventsApi";
 import {
   attentionItems,
@@ -342,7 +342,7 @@ export default function OrganiserEventsPage() {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast } = useFairSeatToast();
   const [cancelEvent] = useCancelEventMutation();
   const [eventToCancel, setEventToCancel] = useState<FairEvent | null>(null);
   const tab = readOrganiserTab(location.search);

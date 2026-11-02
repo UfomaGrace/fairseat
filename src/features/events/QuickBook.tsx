@@ -3,7 +3,7 @@
 //   <QuickBook event={event} />                     // a row: "Book", or "Join the line" when full
 //   <QuickBook event={event} appearance="featured" /> // the dark panel: a white "Book a seat"
 //
-// - Visitor → a link to /login?returnTo=<this page and its filters>, so they come back here.
+// - Visitor → a link to /login with an in-app return state, so they come back here.
 // - Organiser / admin → nothing: only attendees book seats.
 // - Attendee with an active sign-up (GOING, WAITING, OFFERED) → its status badge instead of a button.
 // - Attendee otherwise → POST /events/{eventId}/signups. The mutation invalidates "EventList", so
@@ -11,15 +11,16 @@
 // - Every button's accessible name includes the event title ("Book: Lagos Dev Breakfast"), since a
 //   list has many of them.
 
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { toApiError } from "../../api/client";
 import type { FairEvent } from "../../api/types";
 import { useAuth } from "../../auth/useAuth";
+import { loginReturnState } from "../../auth/returnPath";
 import { conflictMessage, SIGNUP_STATUS_TONES, signupStatusLabel } from "../../lib/labels";
 import { cn } from "../../lib/cn";
 import { Button } from "../../components/ui/button";
 import { StatusBadge } from "../../components/ui/status-badge";
-import { useToast } from "../../components/ui/toast";
+import { useFairSeatToast } from "../../lib/useFairSeatToast";
 import { bookedToast } from "../signups/bookedToast";
 import { useCreateSignupMutation } from "../signups/signupsApi";
 import { activeSignup } from "./discover";
@@ -51,8 +52,9 @@ export type QuickBookProps = {
 export function QuickBook({ event, appearance = "row", className }: QuickBookProps) {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [createSignup, { isLoading }] = useCreateSignupMutation();
-  const { toast } = useToast();
+  const { toast } = useFairSeatToast();
 
   if (user && user.role !== "ATTENDEE") return null;
 
@@ -86,9 +88,12 @@ export function QuickBook({ event, appearance = "row", className }: QuickBookPro
   );
 
   if (!user) {
-    const returnTo = encodeURIComponent(location.pathname + location.search);
     return (
-      <Link to={`/login?returnTo=${returnTo}`} className={cn(classes, "transition-colors", focusRing)}>
+      <Link
+        to="/login"
+        state={loginReturnState(`${location.pathname}${location.search}${location.hash}`)}
+        className={cn(classes, "transition-colors", focusRing)}
+      >
         {name}
       </Link>
     );
@@ -96,7 +101,7 @@ export function QuickBook({ event, appearance = "row", className }: QuickBookPro
 
   async function book() {
     try {
-      toast(bookedToast(await createSignup(event.id).unwrap()));
+      toast(bookedToast(await createSignup(event.id).unwrap(), () => navigate("/me/events")));
     } catch (e) {
       const error = toApiError(e);
       toast(

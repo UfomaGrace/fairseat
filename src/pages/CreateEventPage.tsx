@@ -5,7 +5,7 @@ import { useAuth } from "../auth/useAuth";
 import { EventForm } from "../features/events/EventForm";
 import { useCreateEventMutation } from "../features/events/eventsApi";
 import { cn } from "../lib/cn";
-import { useToast } from "../components/ui/toast";
+import { useFairSeatToast } from "../lib/useFairSeatToast";
 
 const focusRing =
   "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]";
@@ -14,7 +14,7 @@ export default function CreateEventPage() {
   const [createEvent] = useCreateEventMutation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast } = useFairSeatToast();
 
   async function create(body: EventCreate) {
     try {

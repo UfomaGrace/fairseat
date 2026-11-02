@@ -2,7 +2,7 @@ import { CalendarDays, Check, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import type { Signup } from "../api/types";
-import { COVER_TINTS } from "../components/category-cover/coverTints";
+import { FairSeatLogo } from "../components/FairSeatLogo";
 import { Button } from "../components/ui/button";
 import { ConfirmDialog } from "../components/ui/dialog";
 import { EmptyState } from "../components/ui/empty-state";
@@ -25,23 +25,7 @@ const RELATIVE_WEEKDAYS = new Intl.DateTimeFormat("en-US", {
   weekday: "short",
   timeZone: "Africa/Lagos",
 });
-const COVER_PALETTE = [
-  COVER_TINTS.TECH,
-  COVER_TINTS.DESIGN,
-  COVER_TINTS.PRODUCT,
-  COVER_TINTS.CAREER,
-  COVER_TINTS.COMMUNITY,
-];
-
 type Scope = "upcoming" | "past";
-
-function tintForEvent(eventId: string): string {
-  let hash = 0;
-  for (let index = 0; index < eventId.length; index += 1) {
-    hash = (hash * 31 + eventId.charCodeAt(index)) | 0;
-  }
-  return COVER_PALETTE[((hash % COVER_PALETTE.length) + COVER_PALETTE.length) % COVER_PALETTE.length].background;
-}
 
 function relativeEventDate(startsAt: string, now: number): string {
   const days = lagosDaysFromToday(startsAt, now);
@@ -350,6 +334,7 @@ function Ticket({ signup, scope, now, refresh, announce }: {
   announce: (message: string) => void;
 }) {
   const { event } = signup;
+  // EventSummary has no category yet; the backend could add `category` to EventSummary.
   const actions = useBookingActions(event);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -358,11 +343,7 @@ function Ticket({ signup, scope, now, refresh, announce }: {
   const cancelledByPerson = signup.status === "CANCELLED" && !cancelledByEvent;
   const offered = signup.status === "OFFERED" && !cancelledByEvent;
   const neutralTint = expired || cancelledByPerson || cancelledByEvent;
-  const topTint = offered
-    ? COVER_TINTS.DESIGN.background
-    : neutralTint
-      ? "var(--color-surface)"
-      : tintForEvent(event.id);
+  const topTint = "var(--color-surface)";
   const stubTint = offered
     ? "var(--color-copper-wash)"
     : neutralTint
@@ -473,29 +454,34 @@ function Ticket({ signup, scope, now, refresh, announce }: {
       <article className="overflow-hidden rounded-[22px] border border-[var(--color-border)] bg-[var(--color-bg)] transition-transform duration-200 hover:-translate-y-[3px] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
         <Link
           to={eventLink()}
-          className="block min-h-[168px] rounded-t-[inherit] p-5 text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--color-focus)]"
+          className="relative block min-h-[168px] rounded-t-[inherit] p-5 text-[var(--color-text)] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--color-focus)]"
           style={{ background: topTint }}
         >
-          <div className="flex min-w-0 items-start justify-between gap-3">
-            <TicketStatus signup={signup} scope={scope} />
-            <time dateTime={event.startsAt} className="shrink-0 pt-1 text-right text-xs text-[var(--color-text-muted)]">
-              {relativeEventDate(event.startsAt, now)}
-            </time>
-          </div>
-          <h2 className={`mt-4 line-clamp-2 text-lg font-semibold leading-snug ${cancelledByEvent ? "text-[var(--color-text-muted)] line-through" : ""}`}>
-            {event.title}
-          </h2>
-          <div className="mt-3 grid gap-1.5 text-xs text-[var(--color-text-muted)]">
-            <span className="flex min-w-0 items-center gap-1.5">
-              <CalendarDays aria-hidden="true" size={13} className="shrink-0" />
-              <time dateTime={event.startsAt}>{formatDateTime(event.startsAt)}</time>
-              <span aria-hidden="true">–</span>
-              <time dateTime={event.endsAt}>{formatRangeEnd(event.startsAt, event.endsAt)}</time>
-            </span>
-            <span className="flex min-w-0 items-center gap-1.5">
-              <MapPin aria-hidden="true" size={13} className="shrink-0" />
-              <span className="truncate">{event.location}</span>
-            </span>
+          <span aria-hidden="true" className="pointer-events-none absolute top-1/2 right-5 -translate-y-1/2 opacity-25">
+            <FairSeatLogo size={42} />
+          </span>
+          <div className="relative z-10">
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <TicketStatus signup={signup} scope={scope} />
+              <time dateTime={event.startsAt} className="shrink-0 pt-1 text-right text-xs text-[var(--color-text-muted)]">
+                {relativeEventDate(event.startsAt, now)}
+              </time>
+            </div>
+            <h2 className={`mt-4 line-clamp-2 text-lg font-semibold leading-snug ${cancelledByEvent ? "text-[var(--color-text-muted)] line-through" : ""}`}>
+              {event.title}
+            </h2>
+            <div className="mt-3 grid gap-1.5 text-xs text-[var(--color-text-muted)]">
+              <span className="flex min-w-0 items-center gap-1.5">
+                <CalendarDays aria-hidden="true" size={13} className="shrink-0" />
+                <time dateTime={event.startsAt}>{formatDateTime(event.startsAt)}</time>
+                <span aria-hidden="true">–</span>
+                <time dateTime={event.endsAt}>{formatRangeEnd(event.startsAt, event.endsAt)}</time>
+              </span>
+              <span className="flex min-w-0 items-center gap-1.5">
+                <MapPin aria-hidden="true" size={13} className="shrink-0" />
+                <span className="truncate">{event.location}</span>
+              </span>
+            </div>
           </div>
         </Link>
 

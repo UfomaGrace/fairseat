@@ -14,7 +14,7 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 
 export function useAuth() {
   const dispatch = useAppDispatch();
-  const { user, token, expiresAt, notice } = useAppSelector((state) => state.auth);
+  const { user, token, expiresAt, notice, signedOutUserId } = useAppSelector((state) => state.auth);
 
   const signIn = useCallback(
     (session: Session) => {
@@ -27,5 +27,5 @@ export function useAuth() {
   /** reason is shown on the sign-in page, e.g. "You've signed out." */
   const signOut = useCallback((reason?: string) => endSession(dispatch, reason), [dispatch]);
 
-  return { user, token, expiresAt, notice, signIn, signOut };
+  return { user, token, expiresAt, notice, signedOutUserId, signIn, signOut };
 }

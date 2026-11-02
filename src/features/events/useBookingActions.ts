@@ -15,8 +15,10 @@
 // - The functions never throw, so a ConfirmDialog closes after them and the toast says what happened.
 
 import { toApiError } from "../../api/client";
+import { useNavigate } from "react-router";
 import type { FairEvent, Signup } from "../../api/types";
-import { useToast, type ToastOptions } from "../../components/ui/toast";
+import type { ToastOptions } from "../../components/ui/toast";
+import { useFairSeatToast } from "../../lib/useFairSeatToast";
 import { LATEST_DETAILS_LOADED } from "../../lib/labels";
 import { bookedToast } from "../signups/bookedToast";
 import { useAcceptOfferMutation, useCancelSignupMutation, useCreateSignupMutation } from "../signups/signupsApi";
@@ -46,7 +48,8 @@ export function failureToast(e: unknown): ToastOptions {
 }
 
 export function useBookingActions(event: Pick<FairEvent, "id">): BookingActions {
-  const { toast } = useToast();
+  const { toast } = useFairSeatToast();
+  const navigate = useNavigate();
   const [createSignup, { isLoading: booking }] = useCreateSignupMutation();
   const [acceptOffer, { isLoading: accepting }] = useAcceptOfferMutation();
   const [cancelSignupMutation, { isLoading: cancellingSignup }] = useCancelSignupMutation();
@@ -63,7 +66,8 @@ export function useBookingActions(event: Pick<FairEvent, "id">): BookingActions 
   }
 
   return {
-    book: (onResult) => run(async () => bookedToast(await createSignup(event.id).unwrap()), onResult),
+    book: (onResult) =>
+      run(async () => bookedToast(await createSignup(event.id).unwrap(), () => navigate("/me/events")), onResult),
     accept: (signup, onResult) =>
       run(async () => {
         await acceptOffer({ signupId: signup.id, eventId: event.id }).unwrap();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loginPathForReturn, safeReturnPath } from "./returnPath";
+import { loginDestination, loginReturnState, safeReturnPath } from "./returnPath";
 
 describe("safeReturnPath", () => {
   it("keeps an internal path with its query and hash", () => {
@@ -18,10 +18,24 @@ describe("safeReturnPath", () => {
     expect(safeReturnPath("/login?returnTo=/events")).toBeNull();
   });
 
-  it("builds a sign-in URL that keeps a safe return path", () => {
-    expect(loginPathForReturn("/me/events?tab=past#top")).toBe(
-      "/login?returnTo=%2Fme%2Fevents%3Ftab%3Dpast%23top",
-    );
-    expect(loginPathForReturn("https://evil.example")).toBe("/login");
+  it("uses only an app-created return state, and only for the same account", () => {
+    const state = loginReturnState("/events?category=TECH", "user-1");
+    expect(loginDestination(state, "user-1")).toBe("/events?category=TECH");
+    expect(loginDestination(state, "user-2")).toBe("/events");
+    expect(loginDestination({ returnTo: "/me/events", expectedUserId: null }, "user-2")).toBe("/me/events");
+    expect(loginDestination({ returnTo: "/\\evil.example", expectedUserId: null }, "user-2")).toBe("/events");
   });
+
+  it("ignores query-string returns and unrelated navigation state", () => {
+    expect(loginDestination(null, "user-1")).toBe("/events");
+    expect(loginDestination({ from: { pathname: "/me/events" } }, "user-1")).toBe("/events");
+    expect(loginDestination({ returnTo: "/me/events", expectedUserId: "user-2" }, "user-1")).toBe("/events");
+  });
+
+  it.each(["ATTENDEE", "ORGANISER", "ADMIN"])(
+    "lands header sign-in on Discover for %s",
+    (role) => {
+      expect(loginDestination(null, role)).toBe("/events");
+    },
+  );
 });

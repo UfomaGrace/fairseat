@@ -1,86 +1,94 @@
-// HowItWorksPage: how seats and the waiting line work. Linked from the header and footer.
-// Moved here from the old Events intro when Discover was rebuilt: same seat grid, legend and steps.
-
-import type { ReactNode } from "react";
 import { Link } from "react-router";
+import { useAuth } from "../auth/useAuth";
 import { cn } from "../lib/cn";
 
-const SEAT_COUNT = 32;
-/** Seats before this index are going, this one is offered, the rest are free. */
-const OFFERED_SEAT = 23;
+const SEAT_PATTERN = `url("data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="28"><rect x="5" y="5" width="26" height="18" rx="5" fill="white"/></svg>',
+)}")`;
+
+const STEPS = [
+  ["Find an event", "Browse free tech and networking meetups around Lagos."],
+  ["Book a seat", "If there's a seat, it's yours. You'll see it in My events."],
+  ["Full? Join the line", "You get a place in line. Nobody can skip ahead of you."],
+  ["Get an offer", "When a seat opens, the first person in line gets it for 24 hours. Accept it or it goes to the next person."],
+] as const;
 
 const focusRing =
   "focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)] focus-visible:outline-offset-(--focus-ring-offset)";
 
 export default function HowItWorksPage() {
+  const { user } = useAuth();
+  const canHost = user?.role === "ORGANISER" || user?.role === "ADMIN";
+
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10 sm:px-8 md:py-16">
-      <h1 className="text-4xl font-bold tracking-tight md:text-5xl">How it works</h1>
-      <p className="mt-3 text-lg text-(--color-text-muted)">First come, first served. Nobody skips the line.</p>
+    <main className="relative isolate flex min-h-[calc(100dvh-68px)] items-center justify-center overflow-hidden bg-(--color-surface) px-0 py-4 sm:px-8 sm:py-12">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          backgroundColor: "var(--color-border)",
+          maskImage: SEAT_PATTERN,
+          maskSize: "36px 28px",
+          maskRepeat: "repeat",
+        }}
+      />
+      <span aria-hidden="true" className="pointer-events-none absolute top-12 left-[12%] -z-10 hidden h-4.5 w-6.5 rounded-[5px] bg-(--color-copper-wash) md:block" />
+      <span aria-hidden="true" className="pointer-events-none absolute right-[10%] bottom-16 -z-10 hidden h-4.5 w-6.5 rounded-[5px] bg-(--color-copper) md:block" />
 
-      <section
-        aria-label="Seats at an event"
-        className="mt-8 rounded-(--radius-card) bg-(--color-dark) p-6 text-(--color-on-dark) sm:p-9"
-      >
-        <div aria-hidden="true" className="grid grid-cols-8 gap-2 sm:gap-3">
-          {Array.from({ length: SEAT_COUNT }, (_, i) => (
-            <span
-              key={i}
-              className={cn(
-                "h-6 rounded-md sm:h-7",
-                i < OFFERED_SEAT && "bg-(--color-on-dark)",
-                i === OFFERED_SEAT && "bg-(--color-seat-offered)",
-                i > OFFERED_SEAT && "border border-(--color-seat-free-border)",
-              )}
-            />
+      <div className="w-full max-w-3xl rounded-none border-y border-(--color-border) bg-(--color-bg) px-5 py-8 shadow-[0_12px_40px_rgb(17_17_17/0.06)] sm:rounded-[28px] sm:border sm:px-8 sm:py-10 md:px-12 md:py-12">
+        <header>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">How FairSeat works</h1>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-(--color-text-muted) sm:text-lg">
+            Free meetups, fair seats. First come, first served, with no favourites.
+          </p>
+        </header>
+
+        <ol className="mt-8 grid gap-x-8 gap-y-6 sm:grid-cols-2 sm:gap-y-7">
+          {STEPS.map(([title, description], index) => (
+            <li key={title} className="flex items-start gap-4">
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "flex size-8 shrink-0 items-center justify-center rounded-[6px] text-sm font-semibold",
+                  index === 3 ? "bg-(--color-copper) text-(--color-on-warning)" : "bg-(--color-surface) text-(--color-text)",
+                )}
+              >
+                {index + 1}
+              </span>
+              <div>
+                <h2 className="text-base font-semibold">{title}</h2>
+                <p className="mt-1 text-sm leading-6 text-(--color-text-muted)">{description}</p>
+              </div>
+            </li>
           ))}
-        </div>
-
-        <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-(--color-on-dark-muted)">
-          <LegendItem swatch="bg-(--color-on-dark)">Going</LegendItem>
-          <LegendItem swatch="bg-(--color-seat-offered)">Offered (up to 24h to accept)</LegendItem>
-          <LegendItem swatch="border border-(--color-seat-free-border)">Free</LegendItem>
-        </ul>
-
-        <ol className="mt-10 grid gap-6 sm:grid-cols-3">
-          <Step number={1}>Sign up. If there's a seat, you're going.</Step>
-          <Step number={2}>Full? Join the line in sign-up order.</Step>
-          <Step number={3}>A seat frees up? The next person gets the offer, with 24 hours to accept.</Step>
         </ol>
-      </section>
 
-      <p className="mt-8">
+        <section aria-labelledby="hosting-heading" className="mt-8 rounded-2xl bg-(--color-surface) p-5 sm:mt-10 sm:p-6">
+          <h2 id="hosting-heading" className="text-lg font-semibold">Hosting an event?</h2>
+          <p className="mt-1 text-sm leading-6 text-(--color-text-muted)">
+            Set your seats and FairSeat handles the bookings, the line and the offers.
+          </p>
+          <Link
+            to={canHost ? "/organiser/events/new" : "/login"}
+            className={cn(
+              "mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-(--color-border-input) bg-(--color-bg) px-5 text-sm font-semibold text-(--color-text) hover:bg-(--color-border)",
+              focusRing,
+            )}
+          >
+            {canHost ? "Create an event" : "Sign in to host"}
+          </Link>
+        </section>
+
         <Link
           to="/events"
           className={cn(
-            "inline-flex min-h-11 items-center rounded-full bg-(--color-primary) px-6 font-semibold text-(--color-on-primary) hover:bg-(--color-primary-hover)",
+            "mt-6 inline-flex min-h-12 items-center justify-center rounded-full bg-(--color-primary) px-7 font-semibold text-(--color-on-primary) hover:bg-(--color-primary-hover)",
             focusRing,
           )}
         >
-          Find a meetup
+          Find an event
         </Link>
-      </p>
+      </div>
     </main>
-  );
-}
-
-function LegendItem({ swatch, children }: { swatch: string; children: ReactNode }) {
-  return (
-    <li className="flex items-center gap-2">
-      <span aria-hidden="true" className={cn("size-4 shrink-0 rounded-sm", swatch)} />
-      {children}
-    </li>
-  );
-}
-
-function Step({ number, children }: { number: number; children: ReactNode }) {
-  return (
-    <li className="sm:text-lg">
-      {/* The <ol> already numbers the steps for screen readers. */}
-      <span aria-hidden="true" className="block text-3xl font-bold text-(--color-on-dark-accent)">
-        {number}
-      </span>
-      <span className="mt-2 block">{children}</span>
-    </li>
   );
 }

@@ -1,8 +1,8 @@
 // EventDetailPage: one event (GET /events/{eventId}), public. The "Event details v3" design.
 //
 // - useGetEventQuery(eventId) sends the token when signed in, so event.mySignup is filled then.
-// - Category band: full width in the category's cover tint. Breadcrumb, the square cover (tilted
-//   -2deg from 768px unless reduced motion is asked for), category and relative-day pills, the
+// - Category band: full width in the category's cover tint. Breadcrumb, the compact square cover
+//   (tilted -2deg from 768px unless reduced motion is asked for), category and relative-day pills, the
 //   title, the description's first line, "Add to calendar" (.ics built here) and "Copy link".
 //   From 1100px its bottom padding leaves room for the booking panel to overlap it by 112px.
 // - Below, two columns from 768px. Left: date and place cards, "The room", About, the host card
@@ -21,13 +21,14 @@ import { Link, useLocation, useParams } from "react-router";
 import { toApiError } from "../api/client";
 import type { FairEvent } from "../api/types";
 import { useAuth } from "../auth/useAuth";
+import { loginReturnState } from "../auth/returnPath";
 import { Avatar } from "../components/avatar/Avatar";
 import { COVER_TINTS } from "../components/category-cover/coverTints";
 import { EventImage } from "../components/event-image/EventImage";
 import { Button } from "../components/ui/button";
 import { ErrorState } from "../components/ui/error-state";
 import { Skeleton } from "../components/ui/skeleton";
-import { useToast } from "../components/ui/toast";
+import { useFairSeatToast } from "../lib/useFairSeatToast";
 import { BookingBar, BookingPanel, BookingSheet, OfferWatch, type BookingPanelProps } from "../features/events/BookingPanel";
 import { bookingState, relativeDayLabel } from "../features/events/bookingState";
 import { useGetEventQuery } from "../features/events/eventsApi";
@@ -109,8 +110,9 @@ function EventDetail({ event, busy }: { event: FairEvent; busy: boolean }) {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const state = bookingState(event, user, now);
-  const signInHref = `/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`;
-  const panel: BookingPanelProps = { event, state, actions, now, signInHref, signedIn: !!user };
+  const signInHref = "/login";
+  const signInState = loginReturnState(`${location.pathname}${location.search}${location.hash}`, user?.id ?? null);
+  const panel: BookingPanelProps = { event, state, actions, now, signInHref, signInState, signedIn: !!user };
 
   useEffect(() => {
     document.title = `${event.title} · FairSeat`;
@@ -162,7 +164,7 @@ function EventDetail({ event, busy }: { event: FairEvent; busy: boolean }) {
           </div>
 
           <aside aria-label="Booking" className="relative z-10 hidden md:block min-[1100px]:-mt-[112px]">
-            <div className="sticky top-6">
+            <div className="sticky top-[84px]">
               <BookingPanel {...panel} />
             </div>
           </aside>
@@ -176,7 +178,7 @@ function EventDetail({ event, busy }: { event: FairEvent; busy: boolean }) {
 }
 
 function CategoryBand({ event, now }: { event: FairEvent; now: number }) {
-  const { toast } = useToast();
+  const { toast } = useFairSeatToast();
   const tint = COVER_TINTS[event.category];
   const category = CATEGORY_LABELS[event.category];
   const firstLine = event.description.trim().split(/\r?\n/)[0];
@@ -199,7 +201,7 @@ function CategoryBand({ event, now }: { event: FairEvent; now: number }) {
 
   return (
     <div
-      className={cn("pt-5 pb-10 md:pt-6 md:pb-14 min-[1100px]:pb-[152px]", tint.dark ? "text-(--color-on-dark)" : "text-(--color-text)")}
+      className={cn("pt-5 pb-6 md:pt-6 md:pb-10 min-[1100px]:pb-[120px]", tint.dark ? "text-(--color-on-dark)" : "text-(--color-text)")}
       style={{ background: tint.background }}
     >
       <div className={container}>
@@ -223,8 +225,8 @@ function CategoryBand({ event, now }: { event: FairEvent; now: number }) {
           </ol>
         </nav>
 
-        <div className="mt-6 grid items-center gap-8 md:mt-10 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-12">
-          <div className="overflow-hidden rounded-(--radius-cover) shadow-(--shadow-cover) md:motion-safe:-rotate-2">
+        <div className="mt-4 grid items-center gap-4 md:mt-6 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-8">
+          <div className="mx-auto w-full max-w-[220px] overflow-hidden rounded-(--radius-cover) shadow-(--shadow-cover) md:max-w-[300px] md:motion-safe:-rotate-2 min-[1100px]:max-w-[360px]">
             <EventImage category={event.category} ratio="1 / 1" />
           </div>
 
@@ -233,11 +235,11 @@ function CategoryBand({ event, now }: { event: FairEvent; now: number }) {
               <span className={pillClass}>{category}</span>
               <span className={pillClass}>{relativeDayLabel(event, now)}</span>
             </div>
-            <h1 className="mt-4 text-[2.5rem] leading-[1.02] font-semibold wrap-break-word md:text-5xl min-[1100px]:text-[64px]">
+            <h1 className="mt-3 text-[2.25rem] leading-[1.02] font-semibold wrap-break-word md:text-5xl min-[1100px]:text-[56px]">
               {event.title}
             </h1>
-            {firstLine && <p className={cn("mt-4 max-w-xl text-lg leading-7", muted)}>{firstLine}</p>}
-            <div className="mt-6 flex flex-wrap gap-3">
+            {firstLine && <p className={cn("mt-3 max-w-xl text-base leading-6 md:text-lg md:leading-7", muted)}>{firstLine}</p>}
+            <div className="mt-4 flex flex-wrap gap-3">
               <Button
                 variant="secondary"
                 className="h-11 rounded-full border-transparent px-5"
@@ -338,11 +340,11 @@ function LoadingPage() {
   return (
     <main aria-busy="true" className="pb-16">
       <p className="sr-only">Loading event…</p>
-      <div className="bg-(--color-surface) pt-5 pb-10 md:pb-14 min-[1100px]:pb-[152px]">
+      <div className="bg-(--color-surface) pt-5 pb-6 md:pb-10 min-[1100px]:pb-[120px]">
         <div className={container}>
           <Skeleton className="max-w-xs" />
-          <div className="mt-6 grid items-center gap-8 md:mt-10 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-12">
-            <Skeleton shape="image" className="aspect-square rounded-(--radius-cover)" />
+          <div className="mt-4 grid items-center gap-4 md:mt-6 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-8">
+            <Skeleton shape="image" className="mx-auto aspect-square w-full max-w-[220px] rounded-(--radius-cover) md:max-w-[300px] min-[1100px]:max-w-[360px]" />
             <div className="grid gap-4">
               <Skeleton className="max-w-40" />
               <Skeleton lines={2} className="[&_div]:h-12" />

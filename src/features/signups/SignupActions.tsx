@@ -14,7 +14,7 @@ import type { Signup } from "../../api/types";
 import { useNow } from "../../lib/useNow";
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/dialog";
-import { useToast } from "../../components/ui/toast";
+import { useFairSeatToast } from "../../lib/useFairSeatToast";
 import { baseApi } from "../../store/baseApi";
 import { useAppDispatch } from "../../store/hooks";
 import { DECLINE_COPY, GIVE_UP_COPY, LEAVE_LINE_COPY, type CancelCopy } from "./cancelCopy";
@@ -57,7 +57,7 @@ function CancelSignupButton({
   onError,
 }: CancelSignupButtonProps) {
   const [cancelSignup, { isLoading }] = useCancelSignupMutation();
-  const { toast } = useToast();
+  const { toast } = useFairSeatToast();
 
   // Errors are caught here, not rethrown, so the dialog closes and the alert shows on the page.
   async function cancel() {
@@ -93,7 +93,7 @@ type OfferedActionsProps = ActionCallbacks & { signup: Signup; eventId: string }
 /** Countdown and "Accept seat". Polling is the page's job: it knows which query holds the offer. */
 export function OfferedActions({ signup, eventId, onStart, onError }: OfferedActionsProps) {
   const [acceptOffer, { isLoading }] = useAcceptOfferMutation();
-  const { toast } = useToast();
+  const { toast } = useFairSeatToast();
   const dispatch = useAppDispatch();
   const now = useNow(1000);
 

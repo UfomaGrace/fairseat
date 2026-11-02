@@ -10,13 +10,14 @@ import {
   useNavigate,
 } from "react-router";
 import type { Role } from "../api/types";
-import { loginPathForReturn } from "../auth/returnPath";
+import { loginReturnState } from "../auth/returnPath";
+import { sessionSyncChange } from "../auth/sessionSync";
 import { useAuth } from "../auth/useAuth";
 import { RequireAuth } from "../auth/RequireAuth";
 import { RequireRole } from "../auth/RequireRole";
 import { Layout } from "../components/Layout";
-import { useToast } from "../components/ui/toast";
-import { SESSION_ENDED_NOTICE } from "../store/authSlice";
+import { useFairSeatToast } from "../lib/useFairSeatToast";
+import { clearTabUser, hasExpired, parseSession, rememberTabUser, SESSION_ENDED_NOTICE, STORAGE_KEY, TAB_USER_KEY } from "../store/authSlice";
 import EventsPage from "../pages/EventsPage";
 import { RouteChunkLoadError } from "./RouteChunkLoadError";
 import { RouteContent } from "./RouteContent";
@@ -50,10 +51,10 @@ function Titled({ title, children }: { title: string; children: ReactNode }) {
 }
 
 function SessionEndHandler() {
-  const { notice } = useAuth();
+  const { notice, signedOutUserId, user, signIn, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast } = useFairSeatToast();
   const handled = useRef(false);
   const previousPath = useRef(location.pathname);
 
@@ -84,6 +85,51 @@ function SessionEndHandler() {
   }, [location.pathname]);
 
   useEffect(() => {
+    if (!user) return;
+    let previousUserId: string | null = null;
+    try {
+      previousUserId = sessionStorage.getItem(TAB_USER_KEY);
+    } catch {
+      // The per-tab hint is best-effort; localStorage remains the source of the session.
+    }
+    rememberTabUser(user.id);
+    if (previousUserId && previousUserId !== user.id) {
+      toast({ variant: "info", title: `You're now signed in as ${user.displayName}.` });
+      navigate("/events", { replace: true });
+    }
+  }, [navigate, toast, user]);
+
+  useEffect(() => {
+    function onStorage(event: StorageEvent) {
+      if (event.key !== STORAGE_KEY) return;
+
+      const session = event.newValue ? parseSession(event.newValue) : null;
+      const change = session && !hasExpired(session.expiresAt)
+        ? sessionSyncChange(user?.id ?? null, session)
+        : "signed-out";
+
+      if (change === "signed-out") {
+        if (user) {
+          clearTabUser();
+          signOut("You've signed out in another tab.");
+          navigate("/login", { replace: true, state: null });
+        }
+        return;
+      }
+
+      if (!session) return;
+      rememberTabUser(session.user.id);
+      signIn(session);
+      if (change === "different-user") {
+        navigate("/events", { replace: true });
+        toast({ variant: "info", title: `You're now signed in as ${session.user.displayName}.` });
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [navigate, signIn, signOut, toast, user]);
+
+  useEffect(() => {
     if (notice !== SESSION_ENDED_NOTICE) {
       handled.current = false;
       return;
@@ -92,9 +138,15 @@ function SessionEndHandler() {
     handled.current = true;
     toast({ variant: "info", title: SESSION_ENDED_NOTICE });
     if (location.pathname !== "/login") {
-      navigate(loginPathForReturn(`${location.pathname}${location.search}${location.hash}`), { replace: true });
+      navigate("/login", {
+        replace: true,
+        state: loginReturnState(
+          `${location.pathname}${location.search}${location.hash}`,
+          signedOutUserId,
+        ),
+      });
     }
-  }, [location.hash, location.pathname, location.search, navigate, notice, toast]);
+  }, [location.hash, location.pathname, location.search, navigate, notice, signedOutUserId, toast]);
 
   return <Outlet />;
 }
