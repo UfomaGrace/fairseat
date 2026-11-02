@@ -23,9 +23,9 @@ import { useAcceptOfferMutation, useCancelSignupMutation, useCreateSignupMutatio
 import { useCancelEventMutation } from "./eventsApi";
 
 export type BookingActions = {
-  book: () => Promise<void>;
-  accept: (signup: Signup) => Promise<void>;
-  cancelSignup: (signup: Signup, doneTitle: string) => Promise<void>;
+  book: (onResult?: (succeeded: boolean) => void) => Promise<void>;
+  accept: (signup: Signup, onResult?: (succeeded: boolean) => void) => Promise<void>;
+  cancelSignup: (signup: Signup, doneTitle: string, onResult?: (succeeded: boolean) => void) => Promise<void>;
   cancelEvent: () => Promise<void>;
   booking: boolean;
   accepting: boolean;
@@ -45,33 +45,35 @@ export function failureToast(e: unknown): ToastOptions {
   };
 }
 
-export function useBookingActions(event: FairEvent): BookingActions {
+export function useBookingActions(event: Pick<FairEvent, "id">): BookingActions {
   const { toast } = useToast();
   const [createSignup, { isLoading: booking }] = useCreateSignupMutation();
   const [acceptOffer, { isLoading: accepting }] = useAcceptOfferMutation();
   const [cancelSignupMutation, { isLoading: cancellingSignup }] = useCancelSignupMutation();
   const [cancelEventMutation, { isLoading: cancellingEvent }] = useCancelEventMutation();
 
-  async function run(action: () => Promise<ToastOptions>) {
+  async function run(action: () => Promise<ToastOptions>, onResult?: (succeeded: boolean) => void) {
     try {
       toast(await action());
+      onResult?.(true);
     } catch (e) {
       toast(failureToast(e));
+      onResult?.(false);
     }
   }
 
   return {
-    book: () => run(async () => bookedToast(await createSignup(event.id).unwrap())),
-    accept: (signup) =>
+    book: (onResult) => run(async () => bookedToast(await createSignup(event.id).unwrap()), onResult),
+    accept: (signup, onResult) =>
       run(async () => {
         await acceptOffer({ signupId: signup.id, eventId: event.id }).unwrap();
         return { variant: "success", title: "Seat accepted", description: "You're going. See you there." };
-      }),
-    cancelSignup: (signup, doneTitle) =>
+      }, onResult),
+    cancelSignup: (signup, doneTitle, onResult) =>
       run(async () => {
         await cancelSignupMutation({ signupId: signup.id, eventId: event.id }).unwrap();
         return { variant: "success", title: doneTitle };
-      }),
+      }, onResult),
     cancelEvent: () =>
       run(async () => {
         await cancelEventMutation(event.id).unwrap();

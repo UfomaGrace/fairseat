@@ -29,6 +29,15 @@ export const signupsApi = baseApi.injectEndpoints({
         } catch {
           return; // The refetch from invalidatesTags shows the true state.
         }
+        for (const args of signupsApi.util.selectCachedArgsForQuery(getState(), "listMySignups")) {
+          dispatch(
+            signupsApi.util.updateQueryData("listMySignups", args, (draft) => {
+              const existing = draft.items.findIndex((item) => item.event.id === eventId);
+              if (existing >= 0) draft.items[existing] = signup;
+              else if (args?.scope !== "past") draft.items.push(signup);
+            }),
+          );
+        }
         for (const args of eventsApi.util.selectCachedArgsForQuery(getState(), "listEventPages")) {
           dispatch(
             eventsApi.util.updateQueryData("listEventPages", args, (draft) => {
@@ -50,9 +59,17 @@ export const signupsApi = baseApi.injectEndpoints({
     cancelSignup: build.mutation<Signup, { signupId: string; eventId: string }>({
       query: ({ signupId }) => ({ path: `/signups/${id(signupId)}/cancellation`, method: "POST" }),
       invalidatesTags: (_result, _error, { eventId }) => signupChanged(eventId),
-      async onQueryStarted({ eventId }, { dispatch, queryFulfilled }) {
+      async onQueryStarted({ eventId }, { dispatch, getState, queryFulfilled }) {
         try {
           const { data: signup } = await queryFulfilled;
+          for (const args of signupsApi.util.selectCachedArgsForQuery(getState(), "listMySignups")) {
+            dispatch(
+              signupsApi.util.updateQueryData("listMySignups", args, (draft) => {
+                const index = draft.items.findIndex((item) => item.id === signup.id);
+                if (index >= 0) draft.items[index] = signup;
+              }),
+            );
+          }
           dispatch(
             eventsApi.util.updateQueryData("getEvent", eventId, (draft) => {
               draft.mySignup = signup;
@@ -68,9 +85,17 @@ export const signupsApi = baseApi.injectEndpoints({
     acceptOffer: build.mutation<Signup, { signupId: string; eventId: string }>({
       query: ({ signupId }) => ({ path: `/signups/${id(signupId)}/acceptance`, method: "POST" }),
       invalidatesTags: (_result, _error, { eventId }) => signupChanged(eventId),
-      async onQueryStarted({ eventId }, { dispatch, queryFulfilled }) {
+      async onQueryStarted({ eventId }, { dispatch, getState, queryFulfilled }) {
         try {
           const { data: signup } = await queryFulfilled;
+          for (const args of signupsApi.util.selectCachedArgsForQuery(getState(), "listMySignups")) {
+            dispatch(
+              signupsApi.util.updateQueryData("listMySignups", args, (draft) => {
+                const index = draft.items.findIndex((item) => item.id === signup.id);
+                if (index >= 0) draft.items[index] = signup;
+              }),
+            );
+          }
           dispatch(
             eventsApi.util.updateQueryData("getEvent", eventId, (draft) => {
               draft.mySignup = signup;
