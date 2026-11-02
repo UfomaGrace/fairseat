@@ -25,7 +25,7 @@ import { Button } from "../components/ui/button";
 import { ConfirmDialog } from "../components/ui/dialog";
 import { ErrorState } from "../components/ui/error-state";
 import { Skeleton } from "../components/ui/skeleton";
-import { useToast } from "../components/ui/toast";
+import { useFairSeatToast } from "../lib/useFairSeatToast";
 
 const START_CHECK_MS = 30_000;
 
@@ -61,7 +61,7 @@ export default function EditEventPage() {
   const { user } = useAuth();
   const now = useNow(START_CHECK_MS);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast } = useFairSeatToast();
   const [updateEvent] = useUpdateEventMutation();
   const { data: event, error, isLoading, isError, isFetching, refetch } = useGetEventQuery(eventId, {
     skip: !eventId,
@@ -178,7 +178,7 @@ function CancelEventSection({ eventId }: { eventId: string }) {
   const [cancelEvent] = useCancelEventMutation();
   const [error, setError] = useState<ApiError | null>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast } = useFairSeatToast();
 
   async function confirmCancel() {
     try {

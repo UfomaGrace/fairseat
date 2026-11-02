@@ -302,7 +302,7 @@ function EventFormBody({
       </Form>
 
       <aside aria-label="Discover preview" className="hidden md:block">
-        <div className="sticky top-6">
+        <div className="sticky top-[84px]">
           <h2 className="mb-3 text-sm font-semibold text-(--color-text-muted)">Preview on Discover</h2>
           {preview}
         </div>

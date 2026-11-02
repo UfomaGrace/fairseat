@@ -10,7 +10,7 @@ import { ConfirmDialog } from "../components/ui/dialog";
 import { EmptyState } from "../components/ui/empty-state";
 import { ErrorState } from "../components/ui/error-state";
 import { Skeleton } from "../components/ui/skeleton";
-import { useToast } from "../components/ui/toast";
+import { useFairSeatToast } from "../lib/useFairSeatToast";
 import { useCancelEventMutation, useListEventPagesInfiniteQuery, useListEventsQuery } from "../features/events/eventsApi";
 import {
   attentionItems,
@@ -240,7 +240,7 @@ function EventRow({
   const canCancel = tab === "upcoming" && !cancelled;
   return (
     <article className="grid min-w-0 gap-3 rounded-(--radius-card) border border-(--color-border) bg-(--color-bg) p-3 sm:grid-cols-[minmax(0,1fr)_minmax(170px,1.2fr)_auto_auto] sm:items-center sm:gap-4 sm:p-4">
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 items-start gap-3">
         <EventImage
           category={event.category}
           ratio="1 / 1"
@@ -342,7 +342,7 @@ export default function OrganiserEventsPage() {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast } = useFairSeatToast();
   const [cancelEvent] = useCancelEventMutation();
   const [eventToCancel, setEventToCancel] = useState<FairEvent | null>(null);
   const tab = readOrganiserTab(location.search);

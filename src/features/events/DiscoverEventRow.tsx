@@ -22,7 +22,7 @@ import { Skeleton } from "../../components/ui/skeleton";
 import { QuickBook } from "./QuickBook";
 
 // Phones: the action sits under the text, so "Join the line" doesn't squeeze it. From 768px: on the right.
-const rowGrid = "grid grid-cols-[88px_minmax(0,1fr)] items-start gap-x-4 md:grid-cols-[112px_minmax(0,1fr)_auto] md:items-center";
+const rowGrid = "grid grid-cols-[88px_minmax(0,1fr)] items-start gap-x-4 md:grid-cols-[112px_minmax(0,1fr)_auto]";
 
 function seatsLeft(count: number): string {
   return `${count} ${count === 1 ? "seat" : "seats"} left`;
@@ -59,7 +59,7 @@ export function DiscoverEventRow({ event, now }: DiscoverEventRowProps) {
         <p className="text-sm text-(--color-text-muted)">
           <time dateTime={event.startsAt}>{formatDateTime(event.startsAt, { now, relative: true })}</time>
         </p>
-        <h3 className="mt-0.5 text-base leading-snug font-semibold wrap-break-word text-(--color-text) md:text-lg">
+        <h3 className="mt-0.5 line-clamp-2 text-base leading-snug font-semibold wrap-break-word text-(--color-text) md:text-lg">
           <Link
             id={`event-${event.id}`}
             to={`/events/${encodeURIComponent(event.id)}`}
@@ -83,7 +83,9 @@ export function DiscoverEventRow({ event, now }: DiscoverEventRowProps) {
         </p>
       </div>
 
-      <QuickBook event={event} className="mt-3 justify-self-start md:mt-0 md:justify-self-end" />
+      <div className="mt-3 justify-self-start md:mt-0 md:flex md:h-28 md:items-center md:justify-self-end">
+        <QuickBook event={event} />
+      </div>
     </article>
   );
 }
@@ -94,7 +96,9 @@ export function DiscoverEventRowSkeleton() {
     <div className={cn(rowGrid, "py-4")} aria-hidden="true">
       <Skeleton shape="image" className="row-span-2 aspect-square rounded-xl md:row-span-1" />
       <Skeleton lines={3} />
-      <Skeleton className="mt-3 w-16 md:mt-0 [&_div]:h-11 [&_div]:rounded-full" />
+      <div className="mt-3 justify-self-start md:mt-0 md:flex md:h-28 md:items-center md:justify-self-end">
+        <Skeleton className="w-16 [&_div]:h-11 [&_div]:rounded-full" />
+      </div>
     </div>
   );
 }

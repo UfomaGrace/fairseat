@@ -10,8 +10,7 @@
 //                               --color-primary, --color-success, --color-danger, --color-focus, --radius
 //
 // Behaviour:
-// - success and info dismiss on their own after 5 seconds (change with `duration`, in ms)
-// - errors and toasts with an action (for example "Retry") do not auto-dismiss
+// - toasts dismiss after `duration` (or 5 seconds by default); Radix pauses while hovered/focused
 // - at most four toasts are visible; adding another removes the oldest,
 //   including errors and toasts with an action
 // - errors are announced assertively, success and info politely
@@ -48,7 +47,7 @@ export interface ToastOptions {
   /** Defaults to "info". */
   variant?: ToastVariant;
   action?: ToastAction;
-  /** Milliseconds before auto-dismiss. Ignored for errors and toasts with an action. */
+  /** Milliseconds before auto-dismiss; Radix pauses while hovered or focused. */
   duration?: number;
 }
 
@@ -143,13 +142,12 @@ export function ToastProvider({ children, viewportClassName }: ToastProviderProp
         {children}
         {items.map((item) => {
           const styles = variantStyles[item.variant];
-          const sticky = item.variant === "error" || item.action !== undefined;
           return (
             <ToastPrimitive.Root
               key={item.id}
               // Errors interrupt the screen reader; success and info wait their turn.
               type={item.variant === "error" ? "foreground" : "background"}
-              duration={sticky ? Infinity : (item.duration ?? DEFAULT_DURATION)}
+              duration={item.duration ?? DEFAULT_DURATION}
               onOpenChange={(open) => {
                 if (!open) dismiss(item.id);
               }}

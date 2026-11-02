@@ -16,11 +16,12 @@
 
 import { Bell, ChevronDown, Menu, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { IS_MOCK } from "../api/client";
 import type { Role, User } from "../api/types";
 import { ROLE_LABEL } from "../auth/roles";
 import { useAuth } from "../auth/useAuth";
+import { clearTabUser } from "../store/authSlice";
 import { useHasUnseenNotices } from "../features/notices/noticesSeen";
 import { cn } from "../lib/cn";
 import { Avatar } from "./avatar/Avatar";
@@ -93,6 +94,7 @@ function NewDot({ className }: { className?: string }) {
 export function Layout() {
   const { user, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const unseen = useHasUnseenNotices(user);
 
   // The path each menu was opened on. Any other path means it's closed.
@@ -132,11 +134,16 @@ export function Layout() {
     setAccountOpenOn(null);
   }
 
+  function handleSignOut() {
+    signOut("You've signed out.");
+    clearTabUser();
+    closeMenus();
+    navigate("/login", { replace: true, state: null });
+  }
+
   const signInLink = (className: string) => (
     <NavLink
       to="/login"
-      // Sign in returns to the page the visitor was on.
-      state={{ from: location }}
       onClick={closeMenus}
       className={cn(
         "flex items-center justify-center rounded-full bg-(--color-primary) px-5 text-sm font-semibold whitespace-nowrap",
@@ -164,7 +171,7 @@ export function Layout() {
 
       <header
         onKeyDown={handleKeyDown}
-        className="sticky top-0 z-40 border-b border-(--color-header-border) bg-(--color-bg) text-(--color-text) md:static"
+        className="sticky top-0 z-40 border-b border-(--color-header-border) bg-(--color-bg) text-(--color-text)"
       >
         <div className="mx-auto grid h-[68px] max-w-7xl grid-cols-[1fr_auto] items-center gap-x-4 px-4 sm:px-8 md:grid-cols-3">
           <Link
@@ -255,7 +262,7 @@ export function Layout() {
                         </li>
                       ))}
                       <li>
-                        <button type="button" className={menuRowClass} onClick={() => signOut("You've signed out.")}>
+                        <button type="button" className={menuRowClass} onClick={handleSignOut}>
                           Sign out
                         </button>
                       </li>
@@ -324,7 +331,7 @@ export function Layout() {
                   </li>
                 ))}
                 <li>
-                  <button type="button" className={menuRowClass} onClick={() => signOut("You've signed out.")}>
+                  <button type="button" className={menuRowClass} onClick={handleSignOut}>
                     Sign out
                   </button>
                 </li>

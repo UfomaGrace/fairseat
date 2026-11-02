@@ -13,7 +13,7 @@
 //   organiser           You're hosting, Going / Offered / In line, Edit event, Cancel event
 //   viewer              another organiser or an admin: the seats, and "Booking is for attendee accounts."
 //   started / cancelled booking is closed
-// - Signed out, Book / Join are links to /login?returnTo=<this page>.
+// - Signed out, Book / Join link to /login with validated in-app return state.
 // - Give up, Leave, Decline and Cancel event can't be undone, so each asks first (ConfirmDialog).
 // - Copper text on the copper wash is --color-copper-deep (small text needs 6.0:1, see tokens.css).
 
@@ -21,6 +21,7 @@ import { CircleAlert, CircleCheck, ChevronUp, Info } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router";
 import type { FairEvent, Signup } from "../../api/types";
+import type { LoginReturnState } from "../../auth/returnPath";
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog, Dialog } from "../../components/ui/dialog";
 import { cn } from "../../lib/cn";
@@ -55,19 +56,20 @@ export type BookingPanelProps = {
   state: BookingState;
   actions: BookingActions;
   now: number;
-  /** /login?returnTo=… for visitors. */
+  /** /login for visitors. */
   signInHref: string;
+  signInState?: LoginReturnState | null;
   /** Signed in? Visitors get sign-in links instead of buttons. */
   signedIn: boolean;
 };
 
 // ---------- Actions ----------
 
-function BookButton({ state, actions, signedIn, signInHref, className }: Omit<BookingPanelProps, "event" | "now"> & { className?: string }) {
+function BookButton({ state, actions, signedIn, signInHref, signInState, className }: Omit<BookingPanelProps, "event" | "now"> & { className?: string }) {
   const label = state.kind === "full" ? "Join the line" : state.kind === "expired" ? "Join the line again" : "Book a seat";
   if (!signedIn) {
     return (
-      <Link to={signInHref} className={cn(primaryLink, className)}>
+      <Link to={signInHref} state={signInState} className={cn(primaryLink, className)}>
         {label}
       </Link>
     );
@@ -270,6 +272,9 @@ function PanelBody({ event, state, actions, now, signInHref, signedIn }: Booking
           <p className="text-sm text-(--color-text)">
             {formatDateTime(event.startsAt, { now })} · {event.location}. See you there.
           </p>
+          <Link to="/me/events" className="inline-flex min-h-9 items-center text-sm font-medium text-(--color-copper-deep) underline-offset-4 hover:underline">
+            See it in My events
+          </Link>
           {room}
           <div className="flex flex-col gap-3">
             <CancelSignupButton signup={state.signup} actions={actions} copy={GIVE_UP_COPY} />
@@ -292,6 +297,9 @@ function PanelBody({ event, state, actions, now, signInHref, signedIn }: Booking
               : "You're next. "}
             This is a place in line, not a time estimate.
           </p>
+          <Link to="/me/events" className="inline-flex min-h-9 items-center text-sm font-medium text-(--color-copper-deep) underline-offset-4 hover:underline">
+            See it in My events
+          </Link>
           <div className="flex flex-col gap-3">
             <CancelSignupButton signup={state.signup} actions={actions} copy={LEAVE_LINE_COPY} />
             <Note>
