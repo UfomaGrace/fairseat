@@ -26,6 +26,10 @@ function read(userId: string): number {
   }
 }
 
+export function getNoticesSeenAt(userId: string): number {
+  return read(userId);
+}
+
 function subscribe(onChange: () => void): () => void {
   window.addEventListener(CHANGED, onChange);
   window.addEventListener("storage", onChange);

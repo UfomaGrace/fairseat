@@ -80,6 +80,7 @@
 
   /* Cards in the event lists */
   --radius-card: 14px;
+  --radius-notice: 22px;
 
   /* The header: white with a hairline under it. */
   --color-header-border: #f0f0ef;
