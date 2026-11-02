@@ -1,8 +1,8 @@
 // signupsApi: an attendee's seats. Every change here refreshes the event, the lists, my sign-ups
 // and my notices, also when it fails (e.g. 409), so the screen shows what the server decided.
 //
-// createSignup also writes the returned sign-up into the cached event and Discover lists as soon
-// as the server answers, so the row's status badge replaces its Book button at once instead of
+// Every change also writes the returned sign-up into the cached event (createSignup into the
+// Discover lists too) as soon as the server answers, so the screen changes at once instead of
 // after the refetch. Only the server's answer is written (no optimistic update); the refetch then
 // brings the new seat counts.
 import type { MySignupsQuery, Signup, SignupList } from "../../api/types";
@@ -29,6 +29,15 @@ export const signupsApi = baseApi.injectEndpoints({
         } catch {
           return; // The refetch from invalidatesTags shows the true state.
         }
+        for (const args of signupsApi.util.selectCachedArgsForQuery(getState(), "listMySignups")) {
+          dispatch(
+            signupsApi.util.updateQueryData("listMySignups", args, (draft) => {
+              const existing = draft.items.findIndex((item) => item.event.id === eventId);
+              if (existing >= 0) draft.items[existing] = signup;
+              else if (args?.scope !== "past") draft.items.push(signup);
+            }),
+          );
+        }
         for (const args of eventsApi.util.selectCachedArgsForQuery(getState(), "listEventPages")) {
           dispatch(
             eventsApi.util.updateQueryData("listEventPages", args, (draft) => {
@@ -50,12 +59,52 @@ export const signupsApi = baseApi.injectEndpoints({
     cancelSignup: build.mutation<Signup, { signupId: string; eventId: string }>({
       query: ({ signupId }) => ({ path: `/signups/${id(signupId)}/cancellation`, method: "POST" }),
       invalidatesTags: (_result, _error, { eventId }) => signupChanged(eventId),
+      async onQueryStarted({ eventId }, { dispatch, getState, queryFulfilled }) {
+        try {
+          const { data: signup } = await queryFulfilled;
+          for (const args of signupsApi.util.selectCachedArgsForQuery(getState(), "listMySignups")) {
+            dispatch(
+              signupsApi.util.updateQueryData("listMySignups", args, (draft) => {
+                const index = draft.items.findIndex((item) => item.id === signup.id);
+                if (index >= 0) draft.items[index] = signup;
+              }),
+            );
+          }
+          dispatch(
+            eventsApi.util.updateQueryData("getEvent", eventId, (draft) => {
+              draft.mySignup = signup;
+            }),
+          );
+        } catch {
+          // The refetch from invalidatesTags shows the true state.
+        }
+      },
     }),
 
     /** POST /signups/{signupId}/acceptance. 409 OFFER_EXPIRED once the 24-hour window has passed. */
     acceptOffer: build.mutation<Signup, { signupId: string; eventId: string }>({
       query: ({ signupId }) => ({ path: `/signups/${id(signupId)}/acceptance`, method: "POST" }),
       invalidatesTags: (_result, _error, { eventId }) => signupChanged(eventId),
+      async onQueryStarted({ eventId }, { dispatch, getState, queryFulfilled }) {
+        try {
+          const { data: signup } = await queryFulfilled;
+          for (const args of signupsApi.util.selectCachedArgsForQuery(getState(), "listMySignups")) {
+            dispatch(
+              signupsApi.util.updateQueryData("listMySignups", args, (draft) => {
+                const index = draft.items.findIndex((item) => item.id === signup.id);
+                if (index >= 0) draft.items[index] = signup;
+              }),
+            );
+          }
+          dispatch(
+            eventsApi.util.updateQueryData("getEvent", eventId, (draft) => {
+              draft.mySignup = signup;
+            }),
+          );
+        } catch {
+          // The refetch from invalidatesTags shows the true state.
+        }
+      },
     }),
 
     /** GET /me/signups. scope: upcoming (default), past or all. */

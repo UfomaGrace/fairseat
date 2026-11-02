@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { formatDateTime, formatRangeEnd, formatRelativeDay, formatTimeRange, lagosDaysFromToday } from "./format";
+import {
+  calendarTile,
+  formatClock,
+  formatDateTime,
+  formatLongDay,
+  formatRangeEnd,
+  formatRelativeDay,
+  formatTimeRange,
+  lagosDaysFromToday,
+} from "./format";
 
 // 1 Nov 2026, 22:30 in Lagos (21:30 UTC).
 const NOW = Date.parse("2026-11-01T21:30:00Z");
@@ -93,5 +102,19 @@ describe("lagosDaysFromToday", () => {
     expect(lagosDaysFromToday("2026-11-01T22:59:00Z", NOW)).toBe(0);
     expect(lagosDaysFromToday("2026-11-01T23:00:00Z", NOW)).toBe(1);
     expect(lagosDaysFromToday("2026-11-08T22:59:00Z", NOW)).toBe(7);
+  });
+});
+
+describe("formatLongDay", () => {
+  it("writes the weekday and month in full, in Lagos", () => {
+    expect(formatLongDay("2026-11-05T17:00:00Z", NOW)).toBe("Thursday, 5 November");
+    expect(formatLongDay("2026-12-31T23:15:00Z", NOW)).toBe("Friday, 1 January 2027");
+  });
+});
+
+describe("formatClock and calendarTile", () => {
+  it("give the Lagos time and day", () => {
+    expect(formatClock("2026-11-05T17:00:00Z")).toBe("6:00 PM");
+    expect(calendarTile("2026-11-04T23:30:00Z")).toEqual({ month: "Nov", day: "5" });
   });
 });

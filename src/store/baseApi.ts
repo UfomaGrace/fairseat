@@ -15,17 +15,26 @@
 import type { Dispatch } from "@reduxjs/toolkit";
 import { createApi, type BaseQueryFn } from "@reduxjs/toolkit/query/react";
 import { apiFetch, toApiError, type ApiErrorResult, type RequestOptions } from "../api/client";
-import { hasExpired, signedOut, type AuthRootState } from "./authSlice";
+import { hasExpired, SESSION_ENDED_NOTICE, signedOut, type AuthRootState } from "./authSlice";
 
 /** What each endpoint's query() returns: a path plus apiFetch options (auth defaults to 'required'). */
 export interface FairseatArgs extends Omit<RequestOptions, "signal" | "token"> {
   path: string;
 }
 
-/** Sign out and drop every cached response, so the next user never sees the last one's data. */
-export function endSession(dispatch: Dispatch, reason?: string): void {
+/** Sign out once and drop every cached response, so the next user never sees the last one's data. */
+export function endSession(
+  dispatch: Dispatch,
+  reason = SESSION_ENDED_NOTICE,
+  getState?: () => unknown,
+): boolean {
+  if (getState) {
+    const { auth } = getState() as AuthRootState;
+    if (!auth.token) return false;
+  }
   dispatch(signedOut(reason));
   dispatch(baseApi.util.resetApiState());
+  return true;
 }
 
 const fairseatBaseQuery: BaseQueryFn<FairseatArgs, unknown, ApiErrorResult> = async (
@@ -37,7 +46,7 @@ const fairseatBaseQuery: BaseQueryFn<FairseatArgs, unknown, ApiErrorResult> = as
   let token = auth.token;
   // The expiry timer in store.ts can run late (e.g. a sleeping laptop), so check here too.
   if (token && auth.expiresAt && hasExpired(auth.expiresAt)) {
-    endSession(dispatch, "Your session expired. Sign in again.");
+    endSession(dispatch, SESSION_ENDED_NOTICE, getState);
     token = null;
   }
 
@@ -46,9 +55,9 @@ const fairseatBaseQuery: BaseQueryFn<FairseatArgs, unknown, ApiErrorResult> = as
     return { data: res.data };
   } catch (e) {
     const error = toApiError(e);
-    // Only a token we sent can have been rejected; a wrong password (INVALID_CREDENTIALS) is not this.
-    if (error.code === "UNAUTHENTICATED" && token && opts.auth !== "none") {
-      endSession(dispatch, "Your session has ended. Sign in again to continue.");
+    const isSessionRequest = opts.method === "POST" && path.split("?")[0] === "/sessions";
+    if (error.status === 401 && !isSessionRequest) {
+      endSession(dispatch, SESSION_ENDED_NOTICE, getState);
     }
     const { status, code, message, requestId, details } = error;
     return {

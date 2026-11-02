@@ -5,6 +5,9 @@ import {
   EMPTY_EVENT_VALUES,
   eventSchema,
   fromLagosInput,
+  hasEventChanges,
+  isEventSaveDisabled,
+  seatsOfferedByIncrease,
   toEventCreate,
   toLagosInput,
   type EventFormValues,
@@ -54,6 +57,15 @@ describe("Lagos time", () => {
   it("sends a Lagos input with the +01:00 offset", () => {
     expect(fromLagosInput("2026-11-07T16:00")).toBe("2026-11-07T16:00:00+01:00");
     expect(Date.parse(fromLagosInput("2026-11-07T16:00") ?? "")).toBe(Date.parse("2026-11-07T15:00:00Z"));
+  });
+
+  it("converts Lagos time independently of the browser's timezone", () => {
+    vi.stubEnv("TZ", "America/Los_Angeles");
+    expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBe("America/Los_Angeles");
+    expect(new Date().getTimezoneOffset()).toBe(480);
+    expect(fromLagosInput("2026-11-07T16:00")).toBe("2026-11-07T16:00:00+01:00");
+    expect(Date.parse(fromLagosInput("2026-11-07T16:00") ?? "")).toBe(Date.parse("2026-11-07T15:00:00Z"));
+    expect(toLagosInput("2026-11-07T15:00:00Z")).toBe("2026-11-07T16:00");
   });
 
   it("rejects dates and times that don't exist", () => {
@@ -136,7 +148,7 @@ describe("eventSchema (edit)", () => {
     const schema = eventSchema({ initial: valid, seatsTaken: 38 });
     expect(errorsOf(schema, { ...valid, seats: 38 })).toEqual({});
     expect(errorsOf(schema, { ...valid, seats: 37 }).seats).toBe(
-      "38 seats are already taken, so you can't go below 38.",
+      "38 seats are already taken. Choose 38 or more.",
     );
   });
 });
@@ -173,5 +185,36 @@ describe("changedFields", () => {
 
   it("sends a cleared description as an empty string", () => {
     expect(changedFields(valid, { ...valid, description: "" })).toEqual({ description: "" });
+  });
+
+  it("only enables save when a request field meaningfully changes", () => {
+    expect(hasEventChanges(valid, valid)).toBe(false);
+    expect(hasEventChanges(valid, { ...valid, title: ` ${valid.title} ` })).toBe(false);
+    expect(hasEventChanges(valid, { ...valid, seats: 41 })).toBe(true);
+  });
+
+  it("disables Save for an empty edit diff and enables it for a changed field", () => {
+    expect(changedFields(valid, valid)).toEqual({});
+    expect(isEventSaveDisabled("edit", valid, valid)).toBe(true);
+    expect(isEventSaveDisabled("edit", valid, { ...valid, seats: 41 })).toBe(false);
+    expect(isEventSaveDisabled("create", EMPTY_EVENT_VALUES, EMPTY_EVENT_VALUES)).toBe(false);
+  });
+});
+
+describe("seat rules", () => {
+  it("shows a seats error below seats already taken", () => {
+    expect(errorsOf(eventSchema({ initial: valid, seatsTaken: 38 }), { ...valid, seats: 37 }).seats).toBe(
+      "38 seats are already taken. Choose 38 or more.",
+    );
+  });
+
+  it("offers the smaller of the increase and the waiting count", () => {
+    expect(seatsOfferedByIncrease(40, 45, 12)).toBe(5);
+    expect(seatsOfferedByIncrease(40, 60, 12)).toBe(12);
+  });
+
+  it("offers no seats when capacity is not raised or nobody is waiting", () => {
+    expect(seatsOfferedByIncrease(40, 40, 12)).toBe(0);
+    expect(seatsOfferedByIncrease(40, 45, 0)).toBe(0);
   });
 });

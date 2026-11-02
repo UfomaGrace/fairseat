@@ -7,20 +7,18 @@
 // - The cover is a size container, so the word and icon scale with its width (cqw units) and
 //   read the same in an 88px thumbnail and a 400px card.
 // - Record<Category, …> makes TypeScript fail here if the contract adds a category without a cover.
-// - Colours are tokens from styles/tokens.css. Ink strokes take the word's colour; the one accent
-//   is copper.
+// - Colours are tokens from styles/tokens.css; the tints live in coverTints.ts (the Event detail
+//   band uses them too). Ink strokes take the word's colour; the one accent is copper.
 
 import type { ReactNode } from "react";
 import type { Category } from "../../api/types";
 import { cn } from "../../lib/cn";
+import { COVER_TINTS } from "./coverTints";
 
-export type CoverRatio = "16 / 9" | "1 / 1";
+export type CoverRatio = "16 / 9" | "16 / 10" | "1 / 1";
 
 type CoverStyle = {
   word: string;
-  background: string;
-  /** Light word and strokes, for the dark Business cover. */
-  dark?: boolean;
   icon: ReactNode;
 };
 
@@ -30,7 +28,6 @@ const COPPER = "var(--color-copper)";
 const COVERS: Record<Category, CoverStyle> = {
   TECH: {
     word: "Tech",
-    background: "var(--color-cover-tech)",
     icon: (
       <>
         <path d="M15 11 4 24l11 13M33 11l11 13-11 13" />
@@ -40,7 +37,6 @@ const COVERS: Record<Category, CoverStyle> = {
   },
   DESIGN: {
     word: "Design",
-    background: "var(--color-cover-design)",
     icon: (
       <>
         <circle cx="18" cy="28" r="12" />
@@ -50,7 +46,6 @@ const COVERS: Record<Category, CoverStyle> = {
   },
   PRODUCT: {
     word: "Product",
-    background: "var(--color-cover-product)",
     icon: (
       <>
         <path d="M8 36h32M8 26h32" />
@@ -60,7 +55,6 @@ const COVERS: Record<Category, CoverStyle> = {
   },
   CAREER: {
     word: "Career",
-    background: "var(--color-cover-career)",
     icon: (
       <>
         <path d="M5 41h11V31h11V21h11" />
@@ -70,8 +64,6 @@ const COVERS: Record<Category, CoverStyle> = {
   },
   BUSINESS: {
     word: "Business",
-    background: "var(--color-cover-business)",
-    dark: true,
     icon: (
       <>
         <path d="M9 40V30M19 40V22M29 40V26" />
@@ -81,7 +73,6 @@ const COVERS: Record<Category, CoverStyle> = {
   },
   COMMUNITY: {
     word: "People",
-    background: "var(--color-cover-community)",
     icon: (
       <>
         <circle cx="16" cy="16" r="6" />
@@ -101,16 +92,18 @@ export type CategoryCoverProps = {
 
 export function CategoryCover({ category, ratio = "16 / 9", className }: CategoryCoverProps) {
   const cover = COVERS[category];
+  // Light word and strokes on the dark Business cover.
+  const tint = COVER_TINTS[category];
 
   return (
     <div
       aria-hidden="true"
       className={cn(
         "@container relative w-full overflow-hidden select-none",
-        cover.dark ? "text-(--color-on-dark)" : "text-(--color-text)",
+        tint.dark ? "text-(--color-on-dark)" : "text-(--color-text)",
         className,
       )}
-      style={{ aspectRatio: ratio, background: cover.background }}
+      style={{ aspectRatio: ratio, background: tint.background }}
     >
       <svg
         viewBox="0 0 48 48"

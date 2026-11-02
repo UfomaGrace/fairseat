@@ -10,7 +10,6 @@
 // - Cancel event sits in its own danger section, behind a ConfirmDialog. The yaml gives
 //   cancelEvent no request body, so there is no reason to send.
 
-import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ApiError, toApiError } from "../api/client";
@@ -32,11 +31,6 @@ const START_CHECK_MS = 30_000;
 
 const focusRing =
   "focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)] focus-visible:outline-offset-(--focus-ring-offset)";
-
-const backLinkClass = cn(
-  "inline-flex min-h-11 items-center gap-2 rounded-sm text-sm font-medium text-(--color-text-muted) hover:text-(--color-text)",
-  focusRing,
-);
 
 const linkButton = cn(
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium",
@@ -133,6 +127,11 @@ export default function EditEventPage() {
       await updateEvent({ eventId: event.id, body: changes }).unwrap();
     } catch (e) {
       const apiError = toApiError(e);
+      if (apiError.code === "NOT_EVENT_OWNER" || apiError.code === "FORBIDDEN_ROLE") {
+        toast({ variant: "error", title: apiError.message });
+        navigate("/organiser/events");
+        return;
+      }
       if (apiError.code !== "SEATS_BELOW_TAKEN") throw apiError;
       // The tags are already refetching the event; wait for it so the count is current.
       const latest = await refetch();
@@ -140,34 +139,37 @@ export default function EditEventPage() {
       return;
     }
     toast({ variant: "success", title: "Changes saved" });
-    navigate(eventPath(event.id));
+    navigate("/organiser/events");
   };
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8 sm:px-8 sm:py-10">
-      <Link to={eventPath(event.id)} className={backLinkClass}>
-        <ArrowLeft aria-hidden="true" className="size-4" />
-        Back to the event
-      </Link>
+    <main className="min-h-full bg-(--color-surface)">
+      <div className="mx-auto max-w-[1120px] px-4 py-8 sm:px-8 sm:py-10">
+        <nav aria-label="Breadcrumb" className="text-sm text-(--color-text-muted)">
+          <Link to="/organiser/events" className={cn("rounded-sm hover:text-(--color-text)", focusRing)}>
+            Your events
+          </Link>
+          <span aria-hidden="true" className="mx-2">/</span>
+          <span aria-current="page" className="text-(--color-text)">{event.title}</span>
+        </nav>
 
-      <header className="mt-4 mb-8">
-        <h1 className="text-3xl font-bold tracking-tight wrap-break-word text-(--color-text)">Edit event</h1>
-        <p className="mt-2 wrap-break-word text-(--color-text-muted)">
-          {event.title}. Everyone signed up or waiting gets a notice when you save.
-        </p>
-      </header>
+        <header className="mb-7 mt-4">
+          <h1 className="text-3xl font-semibold tracking-tight wrap-break-word text-(--color-text)">Edit event</h1>
+          <p className="mt-2 text-(--color-text-muted)">Changes go live straight away.</p>
+        </header>
 
-      {/* key: a different event (same page, new URL) starts a fresh form. */}
-      <EventForm
-        key={event.id}
-        mode="edit"
-        event={event}
-        submitLabel="Save changes"
-        errorMessage={editErrorMessage}
-        onSubmit={save}
-      />
-
-      <CancelEventSection eventId={event.id} />
+        <EventForm
+          key={event.id}
+          mode="edit"
+          event={event}
+          organiser={event.organiser}
+          cancelPath="/organiser/events"
+          cancelSection={<CancelEventSection eventId={event.id} />}
+          submitLabel="Save changes"
+          errorMessage={editErrorMessage}
+          onSubmit={save}
+        />
+      </div>
     </main>
   );
 }
@@ -192,7 +194,7 @@ function CancelEventSection({ eventId }: { eventId: string }) {
   return (
     <section
       aria-labelledby="cancel-heading"
-      className="mt-12 rounded-lg border border-(--color-danger) bg-(--color-bg) p-5"
+      className="rounded-[var(--radius-card)] border border-(--color-danger) bg-(--color-bg) p-5 sm:p-6"
     >
       <h2 id="cancel-heading" className="text-lg font-semibold text-(--color-danger)">
         Cancel this event
@@ -202,7 +204,10 @@ function CancelEventSection({ eventId }: { eventId: string }) {
       </p>
       <ConfirmDialog
         trigger={
-          <Button variant="danger" className="mt-4 min-h-11">
+          <Button
+            variant="secondary"
+            className="mt-4 min-h-11 border-(--color-danger) text-(--color-danger) hover:bg-(--color-error-wash)"
+          >
             Cancel event
           </Button>
         }

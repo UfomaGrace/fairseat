@@ -153,24 +153,36 @@ export default function LoginPage() {
 
   return (
     <div className="relative isolate flex min-h-dvh flex-col bg-(--color-surface) font-(family-name:--font-sans) text-(--color-text)">
+      <a
+        href="#main"
+        className={cn(
+          "sr-only z-50 rounded-(--radius-md) bg-(--color-bg) px-4 py-3 font-semibold text-(--color-text)",
+          "focus:not-sr-only focus:fixed focus:top-2 focus:left-2",
+          focusRing,
+        )}
+      >
+        Skip to content
+      </a>
       <SeatPattern />
 
       <header className="flex items-center justify-between gap-4 px-4 py-2 md:px-8 md:py-5">
         <Link to="/events" className={cn("flex min-h-11 items-center rounded-(--radius-sm)", focusRing)}>
           <FairSeatLogo size={24} withWordmark />
         </Link>
-        <Link
-          to="/events"
-          className={cn(
-            "flex min-h-11 items-center rounded-(--radius-md) px-3 text-sm font-medium text-(--color-text-muted) hover:text-(--color-text)",
-            focusRing,
-          )}
-        >
-          Explore events
-        </Link>
+        <nav aria-label="Main">
+          <Link
+            to="/events"
+            className={cn(
+              "flex min-h-11 items-center rounded-(--radius-md) px-3 text-sm font-medium text-(--color-text-muted) hover:text-(--color-text)",
+              focusRing,
+            )}
+          >
+            Explore events
+          </Link>
+        </nav>
       </header>
 
-      <main className="flex flex-1 flex-col pt-12 md:items-center md:justify-center md:px-8 md:pt-6 md:pb-20">
+      <main id="main" tabIndex={-1} className="flex flex-1 flex-col pt-12 focus:outline-none md:items-center md:justify-center md:px-8 md:pt-6 md:pb-20">
         <div className="relative flex flex-1 flex-col md:w-full md:max-w-110 md:flex-none">
           <section
             aria-labelledby="login-title"
@@ -335,6 +347,9 @@ export default function LoginPage() {
           <SeatOpenedNote />
         </div>
       </main>
+      <footer className="px-4 py-4 text-center text-sm text-(--color-text-muted)">
+        Demonstration product. All data is fictional.
+      </footer>
     </div>
   );
 }

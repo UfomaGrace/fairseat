@@ -80,6 +80,7 @@
 
   /* Cards in the event lists */
   --radius-card: 14px;
+  --radius-notice: 22px;
 
   /* The header: white with a hairline under it. */
   --color-header-border: #f0f0ef;
@@ -96,6 +97,17 @@
   --color-seat-going: #111111;
   --color-seat-offered: #c24a0b;
   --color-seat-free-border: #8a8a8a;
+
+  /* Event detail "The room": going seats are stone, offered seats pale copper, free seats
+     --color-copper. Decorative: the room has a text label and a legend. */
+  --color-surface-darker: #e6e3de;
+  --color-copper-pale: #f5e1d5;
+
+  /* The event cover in the category band. */
+  --radius-cover: 28px;
+  --shadow-cover: 0 24px 48px -20px rgb(17 17 17 / 0.28), 0 4px 12px -4px rgb(17 17 17 / 0.12);
+  /* The booking panel. */
+  --shadow-panel: 0 16px 40px -16px rgb(17 17 17 / 0.18);
 
   /*
     Category covers (CategoryCover). The word is --color-text on each tint (14:1 or more),

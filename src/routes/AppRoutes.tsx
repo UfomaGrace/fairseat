@@ -1,28 +1,43 @@
-// AppRoutes: every page. All inside Layout (header + footer) except /login, which draws
-// its own frame (logo + "Explore events" only).
-//
-// - Public: /events, /events/:eventId, /how-it-works, /login
-// - ATTENDEE: /me/…   ORGANISER/ADMIN: /organiser/…
-//   Each guarded group is one parent route: RequireAuth + RequireRole wrap an <Outlet />,
-//   and the child routes render into that Outlet.
-// - <Titled> sets the browser tab title, e.g. "Events · FairSeat".
-
-import { useEffect, type ReactNode } from "react";
-import { Navigate, Outlet, Route, Routes } from "react-router";
+import { lazy, useEffect, useRef, type ComponentType, type ReactNode } from "react";
+import {
+  createBrowserRouter,
+  createRoutesFromElements,
+  Navigate,
+  Outlet,
+  Route,
+  RouterProvider,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import type { Role } from "../api/types";
+import { loginPathForReturn } from "../auth/returnPath";
+import { useAuth } from "../auth/useAuth";
 import { RequireAuth } from "../auth/RequireAuth";
 import { RequireRole } from "../auth/RequireRole";
 import { Layout } from "../components/Layout";
-import CreateEventPage from "../pages/CreateEventPage";
-import EditEventPage from "../pages/EditEventPage";
-import EventDetailPage from "../pages/EventDetailPage";
+import { useToast } from "../components/ui/toast";
+import { SESSION_ENDED_NOTICE } from "../store/authSlice";
 import EventsPage from "../pages/EventsPage";
-import HowItWorksPage from "../pages/HowItWorksPage";
-import LoginPage from "../pages/LoginPage";
-import MyEventsPage from "../pages/MyEventsPage";
-import NoticesPage from "../pages/NoticesPage";
-import NotFoundPage from "../pages/NotFoundPage";
-import OrganiserEventsPage from "../pages/OrganiserEventsPage";
+import { RouteChunkLoadError } from "./RouteChunkLoadError";
+import { RouteContent } from "./RouteContent";
+
+function lazyRoutePage<T extends { default: ComponentType }>(load: () => Promise<T>) {
+  return lazy(() =>
+    load().catch((error: unknown) => {
+      throw new RouteChunkLoadError(error);
+    }),
+  );
+}
+
+const CreateEventPage = lazyRoutePage(() => import("../pages/CreateEventPage"));
+const EditEventPage = lazyRoutePage(() => import("../pages/EditEventPage"));
+const EventDetailPage = lazyRoutePage(() => import("../pages/EventDetailPage"));
+const HowItWorksPage = lazyRoutePage(() => import("../pages/HowItWorksPage"));
+const LoginPage = lazyRoutePage(() => import("../pages/LoginPage"));
+const MyEventsPage = lazyRoutePage(() => import("../pages/MyEventsPage"));
+const NoticesPage = lazyRoutePage(() => import("../pages/NoticesPage"));
+const NotFoundPage = lazyRoutePage(() => import("../pages/NotFoundPage"));
+const OrganiserEventsPage = lazyRoutePage(() => import("../pages/OrganiserEventsPage"));
 
 const ATTENDEE_ROLES = ["ATTENDEE"] as const satisfies readonly Role[];
 const ORGANISER_ROLES = ["ORGANISER", "ADMIN"] as const satisfies readonly Role[];
@@ -34,55 +49,118 @@ function Titled({ title, children }: { title: string; children: ReactNode }) {
   return <>{children}</>;
 }
 
-function Guarded({ roles }: { roles: readonly Role[] }) {
+function SessionEndHandler() {
+  const { notice } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const handled = useRef(false);
+  const previousPath = useRef(location.pathname);
+
+  useEffect(() => {
+    if (previousPath.current !== location.pathname) {
+      previousPath.current = location.pathname;
+      let frame = 0;
+      const focusHeading = () => {
+        const heading = document.querySelector<HTMLElement>("main h1");
+        if (!heading) return false;
+        heading.tabIndex = -1;
+        heading.focus();
+        return true;
+      };
+      const observer = new MutationObserver(() => {
+        if (focusHeading()) observer.disconnect();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      frame = window.requestAnimationFrame(() => {
+        if (focusHeading()) observer.disconnect();
+      });
+      return () => {
+        observer.disconnect();
+        window.cancelAnimationFrame(frame);
+      };
+    }
+    return undefined;
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (notice !== SESSION_ENDED_NOTICE) {
+      handled.current = false;
+      return;
+    }
+    if (handled.current) return;
+    handled.current = true;
+    toast({ variant: "info", title: SESSION_ENDED_NOTICE });
+    if (location.pathname !== "/login") {
+      navigate(loginPathForReturn(`${location.pathname}${location.search}${location.hash}`), { replace: true });
+    }
+  }, [location.hash, location.pathname, location.search, navigate, notice, toast]);
+
+  return <Outlet />;
+}
+
+function Guarded({ roles, redirectTo }: { roles: readonly Role[]; redirectTo?: string }) {
   return (
     <RequireAuth>
-      <RequireRole roles={roles}>
+      <RequireRole roles={roles} redirectTo={redirectTo}>
         <Outlet />
       </RequireRole>
     </RequireAuth>
   );
 }
 
-function AppRoutes() {
-  return (
-    <Routes>
-      <Route path="login" element={<Titled title="Sign in"><LoginPage /></Titled>} />
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <>
+      <Route element={<SessionEndHandler />}>
+        <Route
+          path="login"
+          element={
+            <RouteContent>
+              <Titled title="Sign in"><LoginPage /></Titled>
+            </RouteContent>
+          }
+        />
 
-      <Route element={<Layout />}>
-        <Route index element={<Navigate to="/events" replace />} />
+        <Route element={<Layout />}>
+          <Route index element={<Navigate to="/events" replace />} />
 
-        {/* Public */}
-        <Route path="events" element={<Titled title="Discover"><EventsPage /></Titled>} />
-        <Route path="events/:eventId" element={<Titled title="Event details"><EventDetailPage /></Titled>} />
-        <Route path="how-it-works" element={<Titled title="How it works"><HowItWorksPage /></Titled>} />
+          <Route path="events" element={<Titled title="Discover"><EventsPage /></Titled>} />
+          <Route path="events/:eventId" element={<Titled title="Event details"><EventDetailPage /></Titled>} />
+          <Route path="how-it-works" element={<Titled title="How it works"><HowItWorksPage /></Titled>} />
 
-        {/* ATTENDEE */}
-        <Route element={<Guarded roles={ATTENDEE_ROLES} />}>
-          <Route path="me/events" element={<Titled title="My events"><MyEventsPage /></Titled>} />
-          <Route path="me/notices" element={<Titled title="Notices"><NoticesPage /></Titled>} />
+          <Route
+            path="me/notices"
+            element={
+              <RequireAuth>
+                <Titled title="Notices"><NoticesPage /></Titled>
+              </RequireAuth>
+            }
+          />
+
+          <Route element={<Guarded roles={ATTENDEE_ROLES} />}>
+            <Route path="me/events" element={<Titled title="My events"><MyEventsPage /></Titled>} />
+          </Route>
+
+          <Route element={<Guarded roles={ORGANISER_ROLES} redirectTo="/events" />}>
+            <Route path="organiser/events" element={<Titled title="Your events"><OrganiserEventsPage /></Titled>} />
+          </Route>
+
+          <Route element={<Guarded roles={ORGANISER_ROLES} />}>
+            <Route path="organiser/events/new" element={<Titled title="Create event"><CreateEventPage /></Titled>} />
+            <Route
+              path="organiser/events/:eventId/edit"
+              element={<Titled title="Edit event"><EditEventPage /></Titled>}
+            />
+          </Route>
+
+          <Route path="*" element={<Titled title="Page not found"><NotFoundPage /></Titled>} />
         </Route>
-
-        {/* ORGANISER / ADMIN */}
-        <Route element={<Guarded roles={ORGANISER_ROLES} />}>
-          <Route
-            path="organiser/events"
-            element={<Titled title="My organised events"><OrganiserEventsPage /></Titled>}
-          />
-          <Route
-            path="organiser/events/new"
-            element={<Titled title="Create event"><CreateEventPage /></Titled>}
-          />
-          <Route
-            path="organiser/events/:eventId/edit"
-            element={<Titled title="Edit event"><EditEventPage /></Titled>}
-          />
-        </Route>
-
-        <Route path="*" element={<Titled title="Page not found"><NotFoundPage /></Titled>} />
       </Route>
-    </Routes>
-  );
-}
+    </>,
+  ),
+);
 
-export default AppRoutes;
+export default function AppRoutes() {
+  return <RouterProvider router={router} />;
+}

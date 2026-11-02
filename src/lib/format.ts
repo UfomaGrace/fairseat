@@ -117,3 +117,36 @@ export function isDateOnly(value: string): boolean {
   const date = new Date(Date.UTC(year, month - 1, day));
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
+
+const LONG_DAY_FORMAT = new Intl.DateTimeFormat("en-GB", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "Africa/Lagos",
+});
+
+/** "Thursday, 5 November", plus the year when it isn't now's year. */
+export function formatLongDay(isoDateTime: string, now: number = LOADED_AT): string {
+  const time = Date.parse(isoDateTime);
+  if (Number.isNaN(time)) return isoDateTime;
+  const parts = partsOf(LONG_DAY_FORMAT, time);
+  const day = `${parts.weekday}, ${parts.day} ${parts.month}`;
+  return parts.year === partsOf(LONG_DAY_FORMAT, now).year ? day : `${day} ${parts.year}`;
+}
+
+/** "6:00 PM" in Lagos. */
+export function formatClock(isoDateTime: string): string {
+  const time = Date.parse(isoDateTime);
+  if (Number.isNaN(time)) return isoDateTime;
+  const clock = partsOf(CLOCK_FORMAT, time);
+  return `${clock.hour}:${clock.minute} ${clock.dayPeriod.toUpperCase()}`;
+}
+
+/** The calendar tile's two lines: { month: "Nov", day: "5" } in Lagos. */
+export function calendarTile(isoDateTime: string): { month: string; day: string } {
+  const time = Date.parse(isoDateTime);
+  if (Number.isNaN(time)) return { month: "", day: "" };
+  const parts = partsOf(DAY_FORMAT, time);
+  return { month: parts.month, day: parts.day };
+}

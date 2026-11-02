@@ -1,5 +1,5 @@
 // bookedToast: the toast after createSignup. The response says whether we got a seat or a waitlist place.
-// Used by the Event detail page (SignupActions) and the Discover list (QuickBook).
+// Used by the Event detail page (useBookingActions) and the Discover list (QuickBook).
 import type { Signup } from "../../api/types";
 import type { ToastOptions } from "../../components/ui/toast";
 

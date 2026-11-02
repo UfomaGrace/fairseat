@@ -1,48 +1,25 @@
-// SignupActions: the booking box on the Event detail page.
+// SignupActions: the sign-up buttons on My events (MySignupItem).
 //
-//   <SignupActions event={event} />
-//
-// - The page only shows it while the event is bookable (scheduled and not started).
-// - Visitor → "Sign in to book" (returns here after sign-in). Organiser / admin → a note:
-//   only attendee accounts book seats.
-// - Attendee, by event.mySignup.status:
-//     none / CANCELLED  → "Book a seat", or "Join waitlist" when full
-//     OFFER_EXPIRED     → says the offer lapsed, then the same Book / Join button
-//     GOING             → "Cancel my seat" (asks first)
-//     WAITING           → place in line, "Leave waitlist" (asks first)
-//     OFFERED           → countdown and "Accept seat"; the event is polled every 30s meanwhile
+// - GiveUpSeatButton / LeaveLineButton / DeclineOfferButton: cancelSignup, each behind a
+//   ConfirmDialog, worded as on the Event detail page (cancelCopy).
+// - OfferedActions: countdown and "Accept seat". Polling is the page's job: it knows which query
+//   holds the offer.
 // - Each button shows its spinner while its request runs, so it can't be sent twice.
-// - Success → toast. Failure → alert under the buttons with "Reference: …". The mutations'
-//   tags refetch the event either way, so after a 409 the page already shows the new state.
-// - My events reuses CancelSeatButton, LeaveWaitlistButton and OfferedActions. Each page decides
-//   what to poll: here the event, there the sign-up list.
+// - Success → toast. Failure → the page's alert with "Reference: …". The mutations' tags refetch
+//   either way, so after a 409 the page already shows the new state.
+// - The Event detail page has its own panel (features/events/BookingPanel).
 
-import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router";
-import { toApiError, type ApiError } from "../../api/client";
-import type { FairEvent, Signup } from "../../api/types";
-import { useAuth } from "../../auth/useAuth";
-import { FormAlert } from "../../components/form/FormAlert";
-import { conflictMessage } from "../../lib/labels";
+import { useEffect } from "react";
+import type { Signup } from "../../api/types";
 import { useNow } from "../../lib/useNow";
-import { cn } from "../../lib/cn";
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/dialog";
 import { useToast } from "../../components/ui/toast";
 import { baseApi } from "../../store/baseApi";
 import { useAppDispatch } from "../../store/hooks";
-import { useGetEventQuery } from "../events/eventsApi";
-import { bookedToast } from "./bookedToast";
+import { DECLINE_COPY, GIVE_UP_COPY, LEAVE_LINE_COPY, type CancelCopy } from "./cancelCopy";
 import { OfferCountdown } from "./OfferCountdown";
-import { useAcceptOfferMutation, useCancelSignupMutation, useCreateSignupMutation } from "./signupsApi";
-
-const OFFER_POLL_MS = 30_000;
-
-const linkButton = cn(
-  "inline-flex h-12 w-full items-center justify-center rounded-md px-6 text-base font-medium",
-  "bg-(--color-primary) text-(--color-on-primary) hover:bg-(--color-primary-hover)",
-  "focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)] focus-visible:outline-offset-(--focus-ring-offset)",
-);
+import { useAcceptOfferMutation, useCancelSignupMutation } from "./signupsApi";
 
 /** What every action gets from its page: clear the old alert, or show a new one. */
 export type ActionCallbacks = {
@@ -50,137 +27,28 @@ export type ActionCallbacks = {
   onError: (e: unknown) => void;
 };
 
-export function SignupActions({ event }: { event: FairEvent }) {
-  const { user } = useAuth();
-  const location = useLocation();
-  const [error, setError] = useState<ApiError | null>(null);
-
-  if (!user) {
-    return (
-      <Link to="/login" state={{ from: location }} className={linkButton}>
-        Sign in to book
-      </Link>
-    );
-  }
-
-  if (user.role !== "ATTENDEE") {
-    return <p className="text-sm text-(--color-text-muted)">Only attendee accounts can book seats.</p>;
-  }
-
-  const callbacks: ActionCallbacks = {
-    onStart: () => setError(null),
-    onError: (e) => setError(toApiError(e)),
-  };
-  const signup = event.mySignup ?? null;
-
-  function renderActions() {
-    if (!signup || signup.status === "CANCELLED") return <BookButton event={event} {...callbacks} />;
-
-    switch (signup.status) {
-      case "OFFER_EXPIRED":
-        return (
-          <>
-            <p className="text-sm text-(--color-text)">
-              Your seat offer expired and the seat went to the next person. You can still sign up again.
-            </p>
-            <BookButton event={event} {...callbacks} />
-          </>
-        );
-      case "GOING":
-        return (
-          <>
-            <p className="text-sm font-medium text-(--color-text)">You have a seat at this event.</p>
-            <CancelSeatButton signup={signup} eventId={event.id} {...callbacks} />
-          </>
-        );
-      case "WAITING":
-        return (
-          <>
-            <p className="text-sm font-medium text-(--color-text)">
-              {signup.waitingPosition
-                ? `You're #${signup.waitingPosition} on the waitlist.`
-                : "You're on the waitlist."}{" "}
-              <span className="font-normal text-(--color-text-muted)">
-                If a seat frees up, we'll hold it for you for a limited time.
-              </span>
-            </p>
-            <LeaveWaitlistButton signup={signup} eventId={event.id} {...callbacks} />
-          </>
-        );
-      case "OFFERED":
-        return <EventOfferedActions signup={signup} eventId={event.id} {...callbacks} />;
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      {renderActions()}
-      <FormAlert error={error} message={error?.status === 409 ? conflictMessage(error.code) : undefined} />
-    </div>
-  );
-}
-
-function BookButton({ event, onStart, onError }: ActionCallbacks & { event: FairEvent }) {
-  const [createSignup, { isLoading }] = useCreateSignupMutation();
-  const { toast } = useToast();
-
-  async function book() {
-    onStart();
-    try {
-      toast(bookedToast(await createSignup(event.id).unwrap()));
-    } catch (e) {
-      onError(e);
-    }
-  }
-
-  return (
-    <Button size="lg" className="w-full" loading={isLoading} onClick={() => void book()}>
-      {event.seatsAvailable > 0 ? "Book a seat" : "Join waitlist"}
-    </Button>
-  );
-}
-
-type CancelCopy = {
-  label: string;
-  keepLabel: string;
-  title: string;
-  description: string;
-  doneTitle: string;
-};
-
-const CANCEL_SEAT_COPY: CancelCopy = {
-  label: "Cancel my seat",
-  keepLabel: "Keep my seat",
-  title: "Cancel your seat?",
-  description: "Your seat goes to the next person on the waitlist. To come back, you'd have to book again.",
-  doneTitle: "Your seat is cancelled",
-};
-
-const LEAVE_WAITLIST_COPY: CancelCopy = {
-  label: "Leave waitlist",
-  keepLabel: "Stay on the waitlist",
-  title: "Leave the waitlist?",
-  description: "You'll lose your place in line. To come back, you'd join at the end.",
-  doneTitle: "You've left the waitlist",
-};
-
 export type CancelButtonProps = ActionCallbacks & { signup: Signup; eventId: string };
 
-export function CancelSeatButton(props: CancelButtonProps) {
-  return <CancelSignupButton {...props} {...CANCEL_SEAT_COPY} />;
+export function GiveUpSeatButton(props: CancelButtonProps) {
+  return <CancelSignupButton {...props} {...GIVE_UP_COPY} />;
 }
 
-export function LeaveWaitlistButton(props: CancelButtonProps) {
-  return <CancelSignupButton {...props} {...LEAVE_WAITLIST_COPY} />;
+export function LeaveLineButton(props: CancelButtonProps) {
+  return <CancelSignupButton {...props} {...LEAVE_LINE_COPY} />;
+}
+
+export function DeclineOfferButton(props: CancelButtonProps) {
+  return <CancelSignupButton {...props} {...DECLINE_COPY} />;
 }
 
 type CancelSignupButtonProps = CancelButtonProps & CancelCopy;
 
-/** "Cancel my seat" or "Leave waitlist": both are cancelSignup, behind a ConfirmDialog. */
+/** Give up, Leave the line or Decline: all three are cancelSignup, behind a ConfirmDialog. */
 function CancelSignupButton({
   signup,
   eventId,
   label,
+  confirmLabel,
   keepLabel,
   title,
   description,
@@ -211,7 +79,7 @@ function CancelSignupButton({
       }
       title={title}
       description={description}
-      confirmLabel={label}
+      confirmLabel={confirmLabel}
       cancelLabel={keepLabel}
       tone="danger"
       loading={isLoading}
@@ -221,15 +89,6 @@ function CancelSignupButton({
 }
 
 type OfferedActionsProps = ActionCallbacks & { signup: Signup; eventId: string };
-
-/** The Event detail page's offer: OfferedActions, plus polling the event while it shows. */
-function EventOfferedActions(props: OfferedActionsProps) {
-  // A second subscriber to the page's cached event, alive only while an offer shows.
-  // RTK Query polls at the shortest interval any subscriber asks for, so the event (and
-  // this offer's status) refreshes every 30s without a page reload.
-  useGetEventQuery(props.eventId, { pollingInterval: OFFER_POLL_MS });
-  return <OfferedActions {...props} />;
-}
 
 /** Countdown and "Accept seat". Polling is the page's job: it knows which query holds the offer. */
 export function OfferedActions({ signup, eventId, onStart, onError }: OfferedActionsProps) {

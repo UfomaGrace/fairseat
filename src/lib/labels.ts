@@ -125,7 +125,7 @@ export function eventEditConflictMessage(code: string): string {
   return `${message} ${LATEST_DETAILS_LOADED}`;
 }
 
-/** "38 seats are already taken, so you can't go below 38." */
+/** "38 seats are already taken. Choose 38 or more." */
 export function seatsTakenMessage(taken: number): string {
-  return `${taken} ${taken === 1 ? "seat is" : "seats are"} already taken, so you can't go below ${taken}.`;
+  return `${taken} ${taken === 1 ? "seat is" : "seats are"} already taken. Choose ${taken} or more.`;
 }

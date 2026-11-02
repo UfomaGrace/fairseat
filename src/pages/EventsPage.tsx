@@ -2,7 +2,7 @@
 // "Date and area" control, the featured "Next up" event, then "This week" and "Later".
 //
 // - Filters live in the URL (useEventFilters), so refresh, Back and shared links keep them:
-//   ?q (header search) &category (chips) &location&from&to (Date and area).
+//   ?q (keyword; no field sets it since the header search was removed) &category (chips) &location&from&to (Date and area).
 // - Data: GET /events through listEventPages, an RTK Query infinite query. "Show more events"
 //   asks for the next offset and is hidden once all `total` events are loaded. A booking
 //   invalidates "EventList", so every loaded page refetches and shows the true seat counts.
@@ -13,7 +13,7 @@
 // - The request is skipped while a date in the URL is invalid; Date and area shows why.
 // - "Show more events" moves focus to the first new event, so keyboard users carry on from there.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type KeyboardEvent } from "react";
 import { toApiError } from "../api/client";
 import { Chip } from "../components/chip/Chip";
 import { Button } from "../components/ui/button";
@@ -67,6 +67,16 @@ export default function EventsPage() {
   const featured = pickFeatured(events, now);
   const { thisWeek, later } = groupByWeek(events, now, featured?.id);
   const refreshing = isFetching && !isLoading && !isFetchingNextPage;
+
+  function moveCategoryFocus(event: KeyboardEvent<HTMLDivElement>) {
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+    const buttons = Array.from(chipsRef.current?.querySelectorAll<HTMLButtonElement>("button") ?? []);
+    const currentIndex = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    if (currentIndex < 0 || buttons.length === 0) return;
+    event.preventDefault();
+    const direction = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
+    buttons[(currentIndex + direction + buttons.length) % buttons.length]?.focus();
+  }
 
   async function showMore() {
     const firstNew = events.length;
@@ -189,6 +199,7 @@ export default function EventsPage() {
           ref={chipsRef}
           role="group"
           aria-label="Category"
+          onKeyDown={moveCategoryFocus}
           // Phones: one row that scrolls sideways from the screen's left edge to the Date and area
           // button. From 768px: wraps.
           className="-ml-4 flex gap-2 overflow-x-auto py-1 pl-4 scrollbar-none sm:-ml-8 sm:pl-8 md:ml-0 md:flex-wrap md:overflow-visible md:pl-0"
