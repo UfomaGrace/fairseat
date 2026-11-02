@@ -1,4 +1,4 @@
-// NoticesPage: the attendee's in-platform notices (GET /me/notices).
+// NoticesPage: the signed-in user's in-platform notices (GET /me/notices). Any role.
 //
 // - Newest first. The contract already promises that order; sorting by createdAt again is cheap
 //   and keeps the page right if a mock or a future version doesn't.

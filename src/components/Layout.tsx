@@ -4,15 +4,15 @@
 //
 // - Header ("Site header component"): white, 68px, a hairline under it, three equal zones.
 //   Logo left; nav centred (Discover, My events when signed in, How it works) as 40px pills, the
-//   current page filled grey; right: the notices bell (attendees; copper dot when there are unseen
-//   notices) and an avatar button that opens the account menu. Signed out: a black "Sign in".
+//   current page filled grey; right: the notices bell (copper dot when there are unseen notices)
+//   and an avatar button that opens the account menu. Signed out: a black "Sign in".
 // - Pills, bell and avatar are 40px to the eye; an invisible ::after stretches each to a 44px target.
 // - Below 768px: logo left, a Menu button right that opens everything (nav, notices, account).
 // - Both menus remember the page they were opened on, so moving to another page closes them.
 //   Escape closes them and returns focus to their button; a click outside closes the account menu.
 // - NavLink sets aria-current="page" on the active link; the styles hang off that.
 // - Pages render their own <main>, so the skip-link target here is a <div>.
-// - Search lives on Discover (?q=); the header no longer has a field.
+// - No keyword search in the header. Discover still reads ?q= from the URL, but has no field for it yet.
 
 import { Bell, ChevronDown, Menu, X } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
@@ -44,10 +44,13 @@ const MY_EVENTS: Record<Role, NavItem> = {
 };
 
 /** The account menu's links, under the name. Sign out is added after them. */
+const NOTICES: NavItem = { to: "/me/notices", label: "Notices" };
+const CREATE_EVENT: NavItem = { to: "/organiser/events/new", label: "Create event" };
+
 const ACCOUNT_LINKS: Record<Role, readonly NavItem[]> = {
-  ATTENDEE: [{ to: "/me/notices", label: "Notices" }],
-  ORGANISER: [{ to: "/organiser/events/new", label: "Create event" }],
-  ADMIN: [{ to: "/organiser/events/new", label: "Create event" }],
+  ATTENDEE: [NOTICES],
+  ORGANISER: [NOTICES, CREATE_EVENT],
+  ADMIN: [NOTICES, CREATE_EVENT],
 };
 
 function navFor(user: User | null): NavItem[] {
@@ -180,8 +183,7 @@ export function Layout() {
           <div className="hidden items-center gap-2 justify-self-end md:flex">
             {user ? (
               <>
-                {user.role === "ATTENDEE" && (
-                  <Link
+                <Link
                     to="/me/notices"
                     aria-label={unseen ? "Notices, new notices" : "Notices"}
                     className={cn(
@@ -194,7 +196,6 @@ export function Layout() {
                     <Bell aria-hidden="true" className="size-[18px]" />
                     {unseen && <NewDot className="absolute top-2 right-2.5 ring-2 ring-(--color-bg)" />}
                   </Link>
-                )}
 
                 <div ref={accountRef} className="relative">
                   <button

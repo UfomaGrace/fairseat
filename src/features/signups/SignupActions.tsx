@@ -1,6 +1,7 @@
 // SignupActions: the sign-up buttons on My events (MySignupItem).
 //
-// - CancelSeatButton / LeaveWaitlistButton: cancelSignup, each behind a ConfirmDialog.
+// - GiveUpSeatButton / LeaveLineButton / DeclineOfferButton: cancelSignup, each behind a
+//   ConfirmDialog, worded as on the Event detail page (cancelCopy).
 // - OfferedActions: countdown and "Accept seat". Polling is the page's job: it knows which query
 //   holds the offer.
 // - Each button shows its spinner while its request runs, so it can't be sent twice.
@@ -16,6 +17,7 @@ import { ConfirmDialog } from "../../components/ui/dialog";
 import { useToast } from "../../components/ui/toast";
 import { baseApi } from "../../store/baseApi";
 import { useAppDispatch } from "../../store/hooks";
+import { DECLINE_COPY, GIVE_UP_COPY, LEAVE_LINE_COPY, type CancelCopy } from "./cancelCopy";
 import { OfferCountdown } from "./OfferCountdown";
 import { useAcceptOfferMutation, useCancelSignupMutation } from "./signupsApi";
 
@@ -25,47 +27,28 @@ export type ActionCallbacks = {
   onError: (e: unknown) => void;
 };
 
-type CancelCopy = {
-  label: string;
-  keepLabel: string;
-  title: string;
-  description: string;
-  doneTitle: string;
-};
-
-const CANCEL_SEAT_COPY: CancelCopy = {
-  label: "Cancel my seat",
-  keepLabel: "Keep my seat",
-  title: "Cancel your seat?",
-  description: "Your seat goes to the next person on the waitlist. To come back, you'd have to book again.",
-  doneTitle: "Your seat is cancelled",
-};
-
-const LEAVE_WAITLIST_COPY: CancelCopy = {
-  label: "Leave waitlist",
-  keepLabel: "Stay on the waitlist",
-  title: "Leave the waitlist?",
-  description: "You'll lose your place in line. To come back, you'd join at the end.",
-  doneTitle: "You've left the waitlist",
-};
-
 export type CancelButtonProps = ActionCallbacks & { signup: Signup; eventId: string };
 
-export function CancelSeatButton(props: CancelButtonProps) {
-  return <CancelSignupButton {...props} {...CANCEL_SEAT_COPY} />;
+export function GiveUpSeatButton(props: CancelButtonProps) {
+  return <CancelSignupButton {...props} {...GIVE_UP_COPY} />;
 }
 
-export function LeaveWaitlistButton(props: CancelButtonProps) {
-  return <CancelSignupButton {...props} {...LEAVE_WAITLIST_COPY} />;
+export function LeaveLineButton(props: CancelButtonProps) {
+  return <CancelSignupButton {...props} {...LEAVE_LINE_COPY} />;
+}
+
+export function DeclineOfferButton(props: CancelButtonProps) {
+  return <CancelSignupButton {...props} {...DECLINE_COPY} />;
 }
 
 type CancelSignupButtonProps = CancelButtonProps & CancelCopy;
 
-/** "Cancel my seat" or "Leave waitlist": both are cancelSignup, behind a ConfirmDialog. */
+/** Give up, Leave the line or Decline: all three are cancelSignup, behind a ConfirmDialog. */
 function CancelSignupButton({
   signup,
   eventId,
   label,
+  confirmLabel,
   keepLabel,
   title,
   description,
@@ -96,7 +79,7 @@ function CancelSignupButton({
       }
       title={title}
       description={description}
-      confirmLabel={label}
+      confirmLabel={confirmLabel}
       cancelLabel={keepLabel}
       tone="danger"
       loading={isLoading}

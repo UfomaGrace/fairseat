@@ -11,7 +11,7 @@
 //   offer               copper banner, time left to accept (whole minutes), Accept seat, Decline
 //   expired             your offer expired, Join the line again
 //   organiser           You're hosting, Going / Offered / In line, Edit event, Cancel event
-//   viewer              another organiser or an admin: the seats, and a note that only attendees book
+//   viewer              another organiser or an admin: the seats, and "Booking is for attendee accounts."
 //   started / cancelled booking is closed
 // - Signed out, Book / Join are links to /login?returnTo=<this page>.
 // - Give up, Leave, Decline and Cancel event can't be undone, so each asks first (ConfirmDialog).
@@ -27,6 +27,7 @@ import { cn } from "../../lib/cn";
 import { formatDateTime } from "../../lib/format";
 import { baseApi } from "../../store/baseApi";
 import { useAppDispatch } from "../../store/hooks";
+import { DECLINE_COPY, GIVE_UP_COPY, LEAVE_LINE_COPY, type CancelCopy } from "../signups/cancelCopy";
 import type { BookingState } from "./bookingState";
 import { bookingStatusText, formatTimeLeft, lineRow, offerMsLeft, plural } from "./bookingText";
 import { useGetEventQuery } from "./eventsApi";
@@ -77,35 +78,6 @@ function BookButton({ state, actions, signedIn, signInHref, className }: Omit<Bo
     </Button>
   );
 }
-
-type CancelCopy = { label: string; title: string; description: string; confirmLabel: string; keepLabel: string; doneTitle: string };
-
-const GIVE_UP: CancelCopy = {
-  label: "Give up my seat",
-  title: "Give up your seat?",
-  description: "Your seat goes to the next person in line. To come back, you'd book again. You can't undo this.",
-  confirmLabel: "Give up seat",
-  keepLabel: "Keep my seat",
-  doneTitle: "You've given up your seat",
-};
-
-const LEAVE_LINE: CancelCopy = {
-  label: "Leave the line",
-  title: "Leave the line?",
-  description: "You'll lose your place. To come back, you'd join at the back. You can't undo this.",
-  confirmLabel: "Leave the line",
-  keepLabel: "Stay in line",
-  doneTitle: "You've left the line",
-};
-
-const DECLINE: CancelCopy = {
-  label: "Decline",
-  title: "Decline this seat?",
-  description: "The seat goes to the next person in line and you leave the line. You can't undo this.",
-  confirmLabel: "Decline seat",
-  keepLabel: "Keep the offer",
-  doneTitle: "You've declined the seat",
-};
 
 function CancelSignupButton({ signup, actions, copy }: { signup: Signup; actions: BookingActions; copy: CancelCopy }) {
   return (
@@ -270,7 +242,7 @@ function PanelBody({ event, state, actions, now, signInHref, signedIn }: Booking
           )}
           {room}
           {state.kind === "viewer" ? (
-            <Note>Only attendee accounts book seats.</Note>
+            <Note>Booking is for attendee accounts.</Note>
           ) : (
             <div className="flex flex-col gap-3">
               <BookButton {...shared} />
@@ -300,7 +272,7 @@ function PanelBody({ event, state, actions, now, signInHref, signedIn }: Booking
           </p>
           {room}
           <div className="flex flex-col gap-3">
-            <CancelSignupButton signup={state.signup} actions={actions} copy={GIVE_UP} />
+            <CancelSignupButton signup={state.signup} actions={actions} copy={GIVE_UP_COPY} />
             <Note>Can't make it? Give up your seat and it goes straight to the next person in line.</Note>
           </div>
         </>
@@ -321,7 +293,7 @@ function PanelBody({ event, state, actions, now, signInHref, signedIn }: Booking
             This is a place in line, not a time estimate.
           </p>
           <div className="flex flex-col gap-3">
-            <CancelSignupButton signup={state.signup} actions={actions} copy={LEAVE_LINE} />
+            <CancelSignupButton signup={state.signup} actions={actions} copy={LEAVE_LINE_COPY} />
             <Note>
               We'll tell you here and in your notices when a seat opens. You'll have {OFFER_HOURS} hours to accept it.
             </Note>
@@ -364,7 +336,7 @@ function PanelBody({ event, state, actions, now, signInHref, signedIn }: Booking
             >
               Accept seat
             </Button>
-            <CancelSignupButton signup={signup} actions={actions} copy={DECLINE} />
+            <CancelSignupButton signup={signup} actions={actions} copy={DECLINE_COPY} />
             <Note>If you don't accept in time, the seat goes to the next person in line.</Note>
           </div>
         </>
@@ -410,7 +382,7 @@ function PanelBody({ event, state, actions, now, signInHref, signedIn }: Booking
           <div className="flex flex-col gap-3">
             <EditEventLink eventId={event.id} />
             <CancelEventButton actions={actions} />
-            <Note>Everyone signed up gets a notice when you change or cancel the event.</Note>
+            <Note>Everyone booked or in line gets a notice when you change or cancel the event.</Note>
           </div>
         </>
       );

@@ -2,7 +2,7 @@
 // "Date and area" control, the featured "Next up" event, then "This week" and "Later".
 //
 // - Filters live in the URL (useEventFilters), so refresh, Back and shared links keep them:
-//   ?q (header search) &category (chips) &location&from&to (Date and area).
+//   ?q (keyword; no field sets it since the header search was removed) &category (chips) &location&from&to (Date and area).
 // - Data: GET /events through listEventPages, an RTK Query infinite query. "Show more events"
 //   asks for the next offset and is hidden once all `total` events are loaded. A booking
 //   invalidates "EventList", so every loaded page refetches and shows the true seat counts.

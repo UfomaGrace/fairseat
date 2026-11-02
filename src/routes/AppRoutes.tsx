@@ -2,7 +2,8 @@
 // its own frame (logo + "Explore events" only).
 //
 // - Public: /events, /events/:eventId, /how-it-works, /login
-// - ATTENDEE: /me/…   ORGANISER/ADMIN: /organiser/…
+// - Any signed-in user: /me/notices (the contract only asks for a token).
+// - ATTENDEE: /me/events   ORGANISER/ADMIN: /organiser/…
 //   Each guarded group is one parent route: RequireAuth + RequireRole wrap an <Outlet />,
 //   and the child routes render into that Outlet.
 // - <Titled> sets the browser tab title, e.g. "Events · FairSeat".
@@ -57,10 +58,19 @@ function AppRoutes() {
         <Route path="events/:eventId" element={<Titled title="Event details"><EventDetailPage /></Titled>} />
         <Route path="how-it-works" element={<Titled title="How it works"><HowItWorksPage /></Titled>} />
 
+        {/* Any signed-in user */}
+        <Route
+          path="me/notices"
+          element={
+            <RequireAuth>
+              <Titled title="Notices"><NoticesPage /></Titled>
+            </RequireAuth>
+          }
+        />
+
         {/* ATTENDEE */}
         <Route element={<Guarded roles={ATTENDEE_ROLES} />}>
           <Route path="me/events" element={<Titled title="My events"><MyEventsPage /></Titled>} />
-          <Route path="me/notices" element={<Titled title="Notices"><NoticesPage /></Titled>} />
         </Route>
 
         {/* ORGANISER / ADMIN */}

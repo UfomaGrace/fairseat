@@ -13,6 +13,7 @@ import { useSyncExternalStore } from "react";
 import type { Notice, User } from "../../api/types";
 import { useListMyNoticesQuery } from "./noticesApi";
 
+// Per browser, not per account: the contract has no read flag on notices, so there is nothing to sync.
 const KEY_PREFIX = "fairseat.noticesSeenAt.";
 const CHANGED = "fairseat:notices-seen";
 
@@ -54,10 +55,9 @@ export function markNoticesSeen(userId: string, notices: readonly Notice[]): voi
   window.dispatchEvent(new Event(CHANGED));
 }
 
-/** True when the attendee has a notice newer than the last one they saw. Only attendees have notices. */
+/** True when the signed-in user has a notice newer than the last one they saw. */
 export function useHasUnseenNotices(user: User | null): boolean {
-  const attendee = user?.role === "ATTENDEE";
-  const { data } = useListMyNoticesQuery(undefined, { skip: !attendee });
+  const { data } = useListMyNoticesQuery(undefined, { skip: !user });
   const seenAt = useSyncExternalStore(subscribe, () => (user ? read(user.id) : 0));
-  return attendee && !!data && hasUnseen(data.items, seenAt);
+  return !!user && !!data && hasUnseen(data.items, seenAt);
 }
