@@ -41,7 +41,7 @@ export function OfferCountdown({ expiresAt, now }: OfferCountdownProps) {
   }
 
   return (
-    <div className="rounded-md border border-(--color-border) bg-(--color-warning-subtle) p-3">
+    <div className="rounded-md border border-(--color-border) bg-(--color-copper-wash) p-3">
       <p className="text-sm text-(--color-text-muted)">Seat held for you for</p>
       <p className="text-2xl font-semibold tabular-nums text-(--color-warning)">{formatTimeLeft(msLeft)}</p>
       <p className="mt-1 text-sm text-(--color-text)">

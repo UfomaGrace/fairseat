@@ -1,1 +1,58 @@
 @import "tailwindcss";
+
+/* Headings use tight tracking (FairSeat: -0.03em to -0.045em). Colours live in src/styles/tokens.css. */
+@theme {
+  --tracking-tight: -0.035em;
+  --tracking-tighter: -0.045em;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+/*
+  In the base layer so Tailwind tracking-* utilities on a heading still win. No colour here:
+  headings inherit it, so they stay white inside dark sections such as the intro.
+*/
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    letter-spacing: var(--tracking-heading);
+  }
+
+  h1 {
+    letter-spacing: -0.045em;
+  }
+}
+
+/* Sign-in page seats: the pattern fades in, and the copper seat pulses once. Both are
+   switched off with motion-reduce:animate-none where they're used. */
+@keyframes seat-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes seat-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--color-copper-soft);
+  }
+  45% {
+    transform: scale(1.18);
+    box-shadow: 0 0 0 8px var(--color-copper-soft);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 14px transparent;
+  }
+}

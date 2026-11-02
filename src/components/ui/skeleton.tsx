@@ -18,7 +18,7 @@
 // - Fills the width of its container and never sets a fixed width, so it fits 360px.
 
 import { forwardRef, type HTMLAttributes } from "react";
-import { cn } from "../cn";
+import { cn } from "../../lib/cn";
 
 type Shape = "text" | "card" | "image";
 
@@ -48,7 +48,7 @@ function TextLines({ lines }: { lines: number }) {
         <div
           key={i}
           className={cn(
-            "h-4 rounded-[var(--radius-sm)]",
+            "h-4 rounded-sm",
             block,
             count > 1 && i === count - 1 ? "w-3/5" : "w-full",
           )}
@@ -66,7 +66,7 @@ export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(function Skele
     return (
       <div
         ref={ref}
-        className={cn("aspect-video w-full rounded-[var(--radius-md)]", block, className)}
+        className={cn("aspect-video w-full rounded-md", block, className)}
         {...rest}
         aria-hidden="true"
       />
@@ -79,7 +79,7 @@ export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(function Skele
         ref={ref}
         className={cn(
           "w-full min-w-0 overflow-hidden rounded-lg border",
-          "border-[var(--color-border)] bg-[var(--color-surface)]",
+          "border-(--color-border) bg-(--color-surface)",
           className,
         )}
         {...rest}
@@ -87,7 +87,7 @@ export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(function Skele
       >
         <div className={cn("aspect-video w-full", block)} />
         <div className="grid min-w-0 gap-3 p-4">
-          <div className={cn("h-6 w-4/5 rounded-[var(--radius-sm)]", block)} />
+          <div className={cn("h-6 w-4/5 rounded-sm", block)} />
           <TextLines lines={2} />
         </div>
       </div>

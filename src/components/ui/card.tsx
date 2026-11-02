@@ -71,7 +71,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
         ) : (
           <div
             aria-hidden="true"
-            className="flex aspect-video w-full items-center justify-center bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)]"
+            className="flex aspect-video w-full items-center justify-center bg-(--color-bg) text-(--color-text-muted)"
           >
             Image unavailable
           </div>
@@ -105,7 +105,7 @@ export const CardHeader = forwardRef<
   return (
     <div
       ref={ref}
-      className={`mb-3 min-w-0 break-words ${className}`}
+      className={`mb-3 min-w-0 wrap-break-word ${className}`}
       {...props}
     >
       {children}
@@ -123,7 +123,7 @@ export const CardBody = forwardRef<HTMLDivElement, CardBodyProps>(
     return (
       <div
         ref={ref}
-        className={`min-w-0 break-words ${className}`}
+        className={`min-w-0 wrap-break-word ${className}`}
         {...props}
       >
         {children}
@@ -165,7 +165,7 @@ export const CardImage = forwardRef<
     return (
       <div
         aria-hidden="true"
-        className={`flex aspect-video w-full items-center justify-center bg-[var(--color-surface-sunken)] text-[var(--color-text-muted)] ${className}`}
+        className={`flex aspect-video w-full items-center justify-center bg-(--color-bg) text-(--color-text-muted) ${className}`}
       >
         Image unavailable
       </div>

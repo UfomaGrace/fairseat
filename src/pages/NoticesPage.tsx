@@ -11,9 +11,9 @@ import { toApiError } from "../api/client";
 import type { Notice } from "../api/types";
 import { NoticeItem } from "../features/notices/NoticeItem";
 import { useListMyNoticesQuery } from "../features/notices/noticesApi";
-import { EmptyState } from "../shared/ui/empty-state";
-import { ErrorState } from "../shared/ui/error-state";
-import { Skeleton } from "../shared/ui/skeleton";
+import { EmptyState } from "../components/ui/empty-state";
+import { ErrorState } from "../components/ui/error-state";
+import { Skeleton } from "../components/ui/skeleton";
 
 const newestFirst = (a: Notice, b: Notice) => Date.parse(b.createdAt) - Date.parse(a.createdAt);
 

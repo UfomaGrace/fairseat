@@ -14,13 +14,13 @@ import type { FairEvent, User } from "../api/types";
 import { useAuth } from "../auth/useAuth";
 import { useGetEventQuery } from "../features/events/eventsApi";
 import { SignupActions } from "../features/signups/SignupActions";
-import { formatDateTime } from "../lib/format";
-import { CATEGORY_LABELS, SIGNUP_STATUS_TONES, signupStatusLabel } from "../lib/labels";
+import { formatDateTime, formatRangeEnd } from "../lib/format";
+import { CATEGORY_LABELS, SIGNUP_STATUS_TONES, seatState, signupStatusLabel } from "../lib/labels";
 import { useNow } from "../lib/useNow";
-import { cn } from "../shared/cn";
-import { ErrorState } from "../shared/ui/error-state";
-import { Skeleton } from "../shared/ui/skeleton";
-import { StatusBadge } from "../shared/ui/status-badge";
+import { cn } from "../lib/cn";
+import { ErrorState } from "../components/ui/error-state";
+import { Skeleton } from "../components/ui/skeleton";
+import { StatusBadge } from "../components/ui/status-badge";
 
 const START_CHECK_MS = 30_000;
 
@@ -32,7 +32,7 @@ const linkButton = (variant: "primary" | "secondary") =>
     "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium",
     variant === "primary"
       ? "bg-(--color-primary) text-(--color-on-primary) hover:bg-(--color-primary-hover)"
-      : "border border-(--color-border-input) bg-(--color-surface) text-(--color-text) hover:bg-(--color-surface-hover)",
+      : "border border-(--color-border-input) bg-(--color-bg) text-(--color-text) hover:bg-(--color-surface)",
     focusRing,
   );
 
@@ -141,8 +141,8 @@ export default function EventDetailPage() {
           className={cn(
             "mt-6 rounded-md border border-l-4 p-4 font-medium",
             event.status === "CANCELLED"
-              ? "border-(--color-danger) bg-(--color-danger-subtle) text-(--color-danger)"
-              : "border-(--color-border) border-l-(--color-warning) bg-(--color-warning-subtle) text-(--color-text)",
+              ? "border-(--color-danger) bg-(--color-error-wash) text-(--color-danger)"
+              : "border-(--color-border) border-l-(--color-warning) bg-(--color-copper-wash) text-(--color-text)",
           )}
         >
           {closed}
@@ -162,7 +162,7 @@ export default function EventDetailPage() {
         <aside
           aria-labelledby="details-heading"
           aria-busy={isFetching}
-          className="h-fit rounded-lg border border-(--color-border) bg-(--color-surface) p-5"
+          className="h-fit rounded-lg border border-(--color-border) bg-(--color-bg) p-5"
         >
           <h2 id="details-heading" className="text-lg font-semibold text-(--color-text)">
             Event details
@@ -175,8 +175,8 @@ export default function EventDetailPage() {
                 <dt className="font-semibold text-(--color-text-muted)">When (Lagos time)</dt>
                 <dd className="mt-0.5 text-(--color-text)">
                   <time dateTime={event.startsAt}>{formatDateTime(event.startsAt)}</time>
-                  {" to "}
-                  <time dateTime={event.endsAt}>{formatDateTime(event.endsAt)}</time>
+                  {" – "}
+                  <time dateTime={event.endsAt}>{formatRangeEnd(event.startsAt, event.endsAt)}</time>
                 </dd>
               </div>
             </div>
@@ -198,10 +198,11 @@ export default function EventDetailPage() {
               <Users aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-(--color-text-muted)" />
               <div>
                 <dt className="font-semibold text-(--color-text-muted)">Seats</dt>
+                {/* Copper only for low seats (4.9:1 on white); open and full stay ink. */}
                 <dd
                   className={cn(
                     "mt-0.5 font-medium",
-                    event.seatsAvailable > 0 ? "text-(--color-success)" : "text-(--color-warning)",
+                    seatState(event) === "low" ? "text-(--color-warning)" : "text-(--color-text)",
                   )}
                 >
                   {seatsLeftText(event)}

@@ -2,8 +2,7 @@
 //
 //   <OrganiserEventRow event={event} showOrganiser={isAdmin} />
 //
-// - A row, not EventCard: EventCard's title link covers the whole card, which would swallow
-//   the Edit link. Here the title and Edit are two separate tab stops.
+// - The title and Edit are two separate tab stops: no link stretches over the whole row.
 // - The yaml's status is only SCHEDULED or CANCELLED. Started / Ended follow from the times,
 //   judged against the event's asOf (the server's clock, not the device's).
 // - Edit is hidden once the event has ended or been cancelled; a started event can still be edited.
@@ -13,8 +12,8 @@ import { CalendarDays, Pencil, UserRound, Users } from "lucide-react";
 import { Link } from "react-router";
 import type { FairEvent } from "../../api/types";
 import { formatDateTime } from "../../lib/format";
-import { cn } from "../../shared/cn";
-import { StatusBadge, type StatusBadgeTone } from "../../shared/ui/status-badge";
+import { cn } from "../../lib/cn";
+import { StatusBadge, type StatusBadgeTone } from "../../components/ui/status-badge";
 
 type EventPhase = "upcoming" | "started" | "ended" | "cancelled";
 
@@ -25,9 +24,10 @@ const PHASE_LABELS: Record<EventPhase, string> = {
   cancelled: "Cancelled",
 };
 
+// Success green is for feedback messages only, so a started event is neutral.
 const PHASE_TONES: Record<EventPhase, StatusBadgeTone> = {
   upcoming: "info",
-  started: "success",
+  started: "neutral",
   ended: "neutral",
   cancelled: "danger",
 };
@@ -42,7 +42,7 @@ function eventPhase(event: FairEvent): EventPhase {
 
 const editLink = cn(
   "inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium",
-  "border border-(--color-border-input) bg-(--color-surface) text-(--color-text) hover:bg-(--color-surface-hover)",
+  "border border-(--color-border-input) bg-(--color-bg) text-(--color-text) hover:bg-(--color-surface)",
   "focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)] focus-visible:outline-offset-(--focus-ring-offset)",
 );
 
@@ -57,7 +57,7 @@ export function OrganiserEventRow({ event, showOrganiser = false }: OrganiserEve
   const canEdit = phase === "upcoming" || phase === "started";
 
   return (
-    <article className="flex min-w-0 flex-col gap-3 rounded-lg border border-(--color-border) bg-(--color-surface) p-4 sm:flex-row sm:items-center sm:justify-between">
+    <article className="flex min-w-0 flex-col gap-3 rounded-lg border border-(--color-border) bg-(--color-bg) p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 grid gap-2">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <h3 className="min-w-0 text-lg font-semibold leading-snug wrap-break-word text-(--color-text)">

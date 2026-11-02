@@ -21,12 +21,12 @@ import { EventForm, type EventFormProps } from "../features/events/EventForm";
 import { useCancelEventMutation, useGetEventQuery, useUpdateEventMutation } from "../features/events/eventsApi";
 import { EVENT_EDIT_CONFLICT_MESSAGES, eventEditConflictMessage, seatsTakenMessage } from "../lib/labels";
 import { useNow } from "../lib/useNow";
-import { cn } from "../shared/cn";
-import { Button } from "../shared/ui/button";
-import { ConfirmDialog } from "../shared/ui/dialog";
-import { ErrorState } from "../shared/ui/error-state";
-import { Skeleton } from "../shared/ui/skeleton";
-import { useToast } from "../shared/ui/toast";
+import { cn } from "../lib/cn";
+import { Button } from "../components/ui/button";
+import { ConfirmDialog } from "../components/ui/dialog";
+import { ErrorState } from "../components/ui/error-state";
+import { Skeleton } from "../components/ui/skeleton";
+import { useToast } from "../components/ui/toast";
 
 const START_CHECK_MS = 30_000;
 
@@ -192,7 +192,7 @@ function CancelEventSection({ eventId }: { eventId: string }) {
   return (
     <section
       aria-labelledby="cancel-heading"
-      className="mt-12 rounded-lg border border-(--color-danger) bg-(--color-surface) p-5"
+      className="mt-12 rounded-lg border border-(--color-danger) bg-(--color-bg) p-5"
     >
       <h2 id="cancel-heading" className="text-lg font-semibold text-(--color-danger)">
         Cancel this event

@@ -16,7 +16,7 @@
 // Works with Input, Textarea and Select (pass the props to Radix Select's Trigger).
 
 import { useId, type ReactNode } from "react";
-import { cn } from "../cn";
+import { cn } from "../../lib/cn";
 
 export type FieldControlProps = {
   id: string;
@@ -65,17 +65,17 @@ export function FormField({
   };
 
   const hintText = (
-    <p id={hintId} className="text-sm text-muted-foreground">
+    <p id={hintId} className="text-sm text-[var(--color-text-muted)]">
       {hint}
     </p>
   );
 
   return (
-    <div className={cn("flex flex-col gap-1.5 font-sans", className)}>
-      <label htmlFor={controlId} className="text-sm font-medium text-muted-foreground">
+    <div className={cn("flex flex-col gap-1.5 font-[family-name:var(--font-sans)]", className)}>
+      <label htmlFor={controlId} className="text-sm font-medium text-[var(--color-text)]">
         {label}
         {required && (
-          <span aria-hidden="true" className="ml-0.5 text-error">
+          <span aria-hidden="true" className="ml-0.5 text-[var(--color-danger)]">
             *
           </span>
         )}
@@ -89,7 +89,7 @@ export function FormField({
 
       {/* Error is text with an icon-like prefix, never colour alone. */}
       {error && (
-        <p id={errorId} className="text-sm font-medium text-error">
+        <p id={errorId} className="text-sm font-medium text-[var(--color-danger)]">
           <span aria-hidden="true">! </span>
           {error}
         </p>

@@ -24,7 +24,7 @@
 // - Icon-only buttons must pass iconOnly and an aria-label (TypeScript enforces this).
 
 import { forwardRef, type ButtonHTMLAttributes, type MouseEvent } from "react";
-import { cn } from "../cn";
+import { cn } from "../../lib/cn";
 
 type Variant = "primary" | "secondary" | "danger" | "ghost";
 type Size = "sm" | "md" | "lg";
@@ -42,11 +42,11 @@ const variantClasses: Record<Variant, string> = {
   primary:
     "bg-[var(--color-primary)] text-[var(--color-on-primary)] hover:bg-[var(--color-primary-hover)]",
   secondary:
-    "bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border-input)] hover:bg-[var(--color-surface-hover)]",
+    "bg-[var(--color-bg)] text-[var(--color-text)] border border-[var(--color-border-input)] hover:bg-[var(--color-surface)]",
   danger:
     "bg-[var(--color-danger)] text-[var(--color-on-danger)] hover:bg-[var(--color-danger-hover)]",
   ghost:
-    "bg-transparent text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]",
+    "bg-transparent text-[var(--color-text)] hover:bg-[var(--color-surface)]",
 };
 
 // Smallest size is 32px tall, above the WCAG 2.2 minimum target of 24px.
@@ -97,11 +97,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       onClick={handleClick}
       className={cn(
         "relative inline-flex items-center justify-center gap-2 font-medium",
-        "rounded-md font-sans",
+        "rounded-[var(--radius-md)] font-[family-name:var(--font-sans)]",
         "transition-colors",
         "focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)]",
-        "focus-visible:outline-offset-(--focus-ring-offset)",
+        "focus-visible:[outline-offset:var(--focus-ring-offset)]",
         "disabled:cursor-not-allowed disabled:opacity-50",
+        loading && "cursor-wait",
         variantClasses[variant],
         iconOnly ? iconOnlySizeClasses[size] : sizeClasses[size],
         className,

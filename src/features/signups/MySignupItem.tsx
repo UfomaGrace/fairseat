@@ -13,8 +13,8 @@ import { Link } from "react-router";
 import type { Signup } from "../../api/types";
 import { formatDateTime } from "../../lib/format";
 import { SIGNUP_STATUS_TONES, signupStatusLabel } from "../../lib/labels";
-import { cn } from "../../shared/cn";
-import { StatusBadge } from "../../shared/ui/status-badge";
+import { cn } from "../../lib/cn";
+import { StatusBadge } from "../../components/ui/status-badge";
 import { CancelSeatButton, LeaveWaitlistButton, OfferedActions, type ActionCallbacks } from "./SignupActions";
 
 const focusRing =
@@ -45,7 +45,7 @@ export function MySignupItem({ signup, canChange, ...callbacks }: MySignupItemPr
   const actions = renderActions();
 
   return (
-    <li className="rounded-lg border border-(--color-border) bg-(--color-surface) p-4 sm:p-5">
+    <li className="rounded-lg border border-(--color-border) bg-(--color-bg) p-4 sm:p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h3 className="text-lg font-semibold wrap-break-word">

@@ -12,7 +12,7 @@
 import * as RadixCheckbox from "@radix-ui/react-checkbox"
 import { Check } from "lucide-react"
 import { forwardRef, useId, type ReactNode } from "react"
-import { cn } from "../cn"
+import { cn } from "../../lib/cn"
 
 export type CheckboxProps = {
   label: ReactNode
@@ -53,7 +53,7 @@ export const Checkbox = forwardRef<HTMLButtonElement, CheckboxProps>(function Ch
           // A 20 px box, and the ::after extends the hit area to 24×24 px (WCAG 2.5.8).
           // -inset-1 (4 px), not 2 px: the ::after is measured from inside the 2 px border.
           "relative mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-[4px]",
-          "border-2 border-[var(--color-border-input)] bg-[var(--color-surface)]",
+          "border-2 border-[var(--color-border-input)] bg-[var(--color-bg)]",
           "after:absolute after:-inset-1 after:content-['']",
           "data-[state=checked]:border-[var(--color-primary)] data-[state=checked]:bg-[var(--color-primary)] data-[state=checked]:text-[var(--color-on-primary)]",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]",

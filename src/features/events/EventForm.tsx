@@ -21,7 +21,7 @@ import { FormikField } from "../../components/form/FormikField";
 import { FormikSelect } from "../../components/form/FormikSelect";
 import { FormikTextarea } from "../../components/form/FormikTextarea";
 import { CATEGORY_OPTIONS } from "../../lib/labels";
-import { Button } from "../../shared/ui/button";
+import { Button } from "../../components/ui/button";
 import {
   changedFields,
   DESCRIPTION_MAX,

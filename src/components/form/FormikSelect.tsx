@@ -10,9 +10,9 @@
 // - 44px tall, with the tokens' visible focus ring.
 
 import { useField } from "formik";
-import { cn } from "../../shared/cn";
-import { FormField } from "../../shared/ui/form-field";
-import { Select } from "../../shared/ui/select";
+import { cn } from "../../lib/cn";
+import { FormField } from "../../components/ui/form-field";
+import { Select } from "../../components/ui/select";
 
 export type FormikSelectOption<V extends string> = { value: V; label: string; disabled?: boolean };
 

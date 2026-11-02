@@ -13,8 +13,8 @@ import { Link } from "react-router";
 import type { Notice } from "../../api/types";
 import { formatDateTime } from "../../lib/format";
 import { NOTICE_KIND_LABELS, NOTICE_KIND_TONES } from "../../lib/labels";
-import { cn } from "../../shared/cn";
-import { StatusBadge } from "../../shared/ui/status-badge";
+import { cn } from "../../lib/cn";
+import { StatusBadge } from "../../components/ui/status-badge";
 
 const focusRing =
   "focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)] focus-visible:outline-offset-(--focus-ring-offset)";
@@ -23,7 +23,7 @@ export function NoticeItem({ notice }: { notice: Notice }) {
   const messageId = useId();
 
   return (
-    <li className="rounded-lg border border-(--color-border) bg-(--color-surface) p-4 sm:p-5">
+    <li className="rounded-lg border border-(--color-border) bg-(--color-bg) p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <StatusBadge tone={NOTICE_KIND_TONES[notice.kind]}>{NOTICE_KIND_LABELS[notice.kind]}</StatusBadge>
         <time dateTime={notice.createdAt} className="text-sm text-(--color-text-muted)">

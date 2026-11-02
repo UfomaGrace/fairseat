@@ -1,76 +1,108 @@
-// EventsPage: the public list of upcoming events (GET /events), with filters and paging.
+// EventsPage: Discover, the public home page. "What's on in Lagos", category chips and the
+// "Date and area" control, the featured "Next up" event, then "This week" and "Later".
 //
-// - Filters and the page live in the URL (useEventFilters), so links and Back work.
-//   Keyword and location apply on Search; category and dates apply as soon as they change.
-// - isLoading: no data yet (first visit) → skeletons.
-//   isFetching: a request is running, maybe with old data still on screen → dim the old results.
-// - The query is skipped while a date is invalid; the date error says why.
+// - Filters live in the URL (useEventFilters), so refresh, Back and shared links keep them:
+//   ?q (header search) &category (chips) &location&from&to (Date and area).
+// - Data: GET /events through listEventPages, an RTK Query infinite query. "Show more events"
+//   asks for the next offset and is hidden once all `total` events are loaded. A booking
+//   invalidates "EventList", so every loaded page refetches and shows the true seat counts.
+// - Featured: the soonest loaded event with a free seat (pickFeatured). It isn't repeated in the
+//   lists. "This week" is the next 7 Lagos days (groupByWeek). Empty groups are hidden.
+// - isLoading: no data yet → skeleton rows. isFetching after that (a filter change or a refetch)
+//   → the old results dim until the new ones arrive.
+// - The request is skipped while a date in the URL is invalid; Date and area shows why.
+// - "Show more events" moves focus to the first new event, so keyboard users carry on from there.
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useRef, useState, type FormEvent } from "react";
-import type { EventPage } from "../api/types";
+import { useEffect, useRef } from "react";
 import { toApiError } from "../api/client";
-import { UrlFilterSelect } from "../components/UrlFilterSelect";
-import { EventCard } from "../features/events/EventCard";
-import { useListEventsQuery } from "../features/events/eventsApi";
-import { PAGE_SIZE, TEXT_MAX, useEventFilters, type EventFilters } from "../features/events/useEventFilters";
-import { CATEGORY_OPTIONS } from "../lib/labels";
-import { cn } from "../shared/cn";
-import { Button } from "../shared/ui/button";
-import { EmptyState } from "../shared/ui/empty-state";
-import { ErrorState } from "../shared/ui/error-state";
-import { FormField } from "../shared/ui/form-field";
-import { Input } from "../shared/ui/input";
-import { Skeleton } from "../shared/ui/skeleton";
+import { Chip } from "../components/chip/Chip";
+import { Button } from "../components/ui/button";
+import { EmptyState } from "../components/ui/empty-state";
+import { ErrorState } from "../components/ui/error-state";
+import { DateAreaFilter } from "../features/events/DateAreaFilter";
+import { DiscoverEventRow, DiscoverEventRowSkeleton } from "../features/events/DiscoverEventRow";
+import { groupByWeek, loadedEvents, pickFeatured } from "../features/events/discover";
+import { useListEventPagesInfiniteQuery, type EventPagesQuery } from "../features/events/eventsApi";
+import { FeaturedEvent } from "../features/events/FeaturedEvent";
+import { useEventFilters } from "../features/events/useEventFilters";
+import type { FairEvent } from "../api/types";
+import { CATEGORY_LABELS, CATEGORY_OPTIONS } from "../lib/labels";
+import { useNow } from "../lib/useNow";
+import { cn } from "../lib/cn";
 
-/** "Showing 21–40 of 45 events". */
-function showingMessage(data: EventPage): string {
-  if (data.items.length === 0) return "No events found";
-  const first = data.offset + 1;
-  const last = data.offset + data.items.length;
-  return `Showing ${first}–${last} of ${data.total} ${data.total === 1 ? "event" : "events"}`;
+function countLabel(count: number): string {
+  return `${count} ${count === 1 ? "event" : "events"}`;
 }
 
 export default function EventsPage() {
-  const { filters, queryArgs, dateError, activeCount, update, setOffset, clearFilters } = useEventFilters();
-  const { data, error, isLoading, isFetching, isError, refetch } = useListEventsQuery(queryArgs, {
-    skip: dateError !== null,
-  });
-  const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const { filters, queryArgs, dateError, activeCount, update, clearFilters } = useEventFilters();
+  // "Show more" pages with the API's offset, so a ?offset in the URL isn't used here.
+  const { q, category, location, from, to, limit } = queryArgs;
+  const listQuery: EventPagesQuery = { q, category, location, from, to, limit };
 
-  // Move to the top of the new page, so keyboard and screen reader users start reading there.
-  function goToOffset(offset: number) {
-    setOffset(offset);
-    resultsHeadingRef.current?.focus();
+  const {
+    data,
+    error,
+    isLoading,
+    isFetching,
+    isError,
+    isFetchNextPageError,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+  } = useListEventPagesInfiniteQuery(listQuery, { skip: dateError !== null });
+  const now = useNow(60_000);
+  const chipsRef = useRef<HTMLDivElement>(null);
+
+  // On phones the chips scroll sideways: keep the chosen one in view (e.g. ?category=BUSINESS on load).
+  useEffect(() => {
+    chipsRef.current
+      ?.querySelector('[aria-pressed="true"]')
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [filters.category]);
+
+  const events = loadedEvents(data?.pages);
+  const total = data?.pages.at(-1)?.total ?? 0;
+  const featured = pickFeatured(events, now);
+  const { thisWeek, later } = groupByWeek(events, now, featured?.id);
+  const refreshing = isFetching && !isLoading && !isFetchingNextPage;
+
+  async function showMore() {
+    const firstNew = events.length;
+    const result = await fetchNextPage();
+    const next: FairEvent | undefined = loadedEvents(result.data?.pages)[firstNew];
+    // Wait a frame for React to draw the new rows.
+    if (next) requestAnimationFrame(() => document.getElementById(`event-${next.id}`)?.focus());
   }
-
-  const refreshing = isFetching && !isLoading;
 
   function renderResults() {
     if (dateError) return null;
 
     if (isLoading) {
       return (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul aria-label="Loading events" className="mt-8 divide-y divide-(--color-border)">
           {Array.from({ length: 6 }, (_, i) => (
-            <li key={i} className="rounded-lg border border-(--color-border) bg-(--color-surface) p-4">
-              <Skeleton lines={4} />
+            <li key={i}>
+              <DiscoverEventRowSkeleton />
             </li>
           ))}
         </ul>
       );
     }
 
-    if (isError) {
+    if (isError && !data) {
       const apiError = toApiError(error);
       const advice = apiError.isConnectionProblem
         ? "Check your connection and try again."
         : "Something went wrong on our side. Try again in a moment.";
       return (
         <ErrorState
-          headingLevel="h3"
+          headingLevel="h2"
+          className="mt-8"
           title="We couldn't load events"
           description={`${advice} Reference: ${apiError.requestId}`}
+          retryLabel="Retry"
           onRetry={() => void refetch()}
           retrying={isFetching}
         />
@@ -79,226 +111,146 @@ export default function EventsPage() {
 
     if (!data) return null;
 
-    if (data.items.length === 0) {
-      // ?offset points past the end, e.g. an old link after events ended.
-      if (data.offset > 0 && data.total > 0) {
+    if (events.length === 0) {
+      if (filters.category) {
         return (
           <EmptyState
-            headingLevel="h3"
-            title="This page is empty"
-            description={`There are ${data.total} matching events, but none on this page.`}
-            action={{ label: "Go to the first page", onClick: () => goToOffset(0) }}
+            className="mt-8"
+            title={`Nothing in ${CATEGORY_LABELS[filters.category]} yet`}
+            description="New meetups are added often. Check back soon, or see what's on in every category."
+            action={{ label: "Show all events", onClick: clearFilters }}
           />
         );
       }
       return activeCount > 0 ? (
         <EmptyState
-          headingLevel="h3"
-          title="No events match these filters"
-          description="Try a different keyword, category, location or dates."
-          action={{ label: "Clear filters", onClick: clearFilters }}
+          className="mt-8"
+          title="No events match your search"
+          description="Try another keyword, area or date."
+          action={{ label: "Show all events", onClick: clearFilters }}
         />
       ) : (
         <EmptyState
-          headingLevel="h3"
+          className="mt-8"
           title="No upcoming events yet"
           description="New meetups are added often. Check back soon."
         />
       );
     }
 
-    const hasPrevious = data.offset > 0;
-    const hasNext = data.offset + data.items.length < data.total;
-
     return (
-      <div className={cn("transition-opacity", refreshing && "opacity-60")}>
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {data.items.map((event) => (
-            <li key={event.id} className="min-w-0">
-              <EventCard event={event} />
-            </li>
-          ))}
-        </ul>
+      <div className={cn("transition-opacity motion-reduce:transition-none", refreshing && "opacity-60")}>
+        {featured && (
+          <div className="mt-8">
+            <FeaturedEvent event={featured} now={now} />
+          </div>
+        )}
 
-        {(hasPrevious || hasNext) && (
-          <nav aria-label="Pages" className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <EventGroup title="This week" events={thisWeek} now={now} />
+        <EventGroup title="Later" events={later} now={now} />
+
+        {isFetchNextPageError && (
+          <ErrorState
+            headingLevel="h2"
+            className="mt-6"
+            title="We couldn't load more events"
+            description={`Check your connection and try again. Reference: ${toApiError(error).requestId}`}
+            retryLabel="Retry"
+            onRetry={() => void showMore()}
+            retrying={isFetchingNextPage}
+          />
+        )}
+
+        {hasNextPage && !isFetchNextPageError && (
+          <div className="mt-10 flex justify-center">
             <Button
               variant="secondary"
-              className="min-h-11"
-              disabled={!hasPrevious}
-              onClick={() => goToOffset(Math.max(0, data.offset - PAGE_SIZE))}
+              className="h-12 rounded-full px-6 text-base font-semibold"
+              loading={isFetchingNextPage}
+              onClick={() => void showMore()}
             >
-              <ChevronLeft aria-hidden="true" className="size-4" />
-              Previous
+              Show more events
             </Button>
-            <Button
-              variant="secondary"
-              className="min-h-11"
-              disabled={!hasNext}
-              onClick={() => goToOffset(data.offset + PAGE_SIZE)}
-            >
-              Next
-              <ChevronRight aria-hidden="true" className="size-4" />
-            </Button>
-          </nav>
+          </div>
         )}
       </div>
     );
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-8">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-(--color-text)">Events</h1>
-        <p className="mt-2 text-(--color-text-muted)">Find a meetup in Lagos and save your seat.</p>
-      </header>
+    <main className="mx-auto max-w-7xl px-4 pt-6 pb-16 sm:px-8 md:pt-10">
+      <h1 className="text-3xl font-bold tracking-tight md:text-5xl">What's on in Lagos</h1>
+      <p className="mt-2 text-(--color-text-muted) md:text-lg">
+        Free tech and networking meetups. A fair seat for everyone.
+      </p>
 
-      <section aria-labelledby="filters-heading" className="rounded-lg border border-(--color-border) bg-(--color-surface) p-4">
-        <h2 id="filters-heading" className="sr-only">
-          Filters
-        </h2>
-
-        <SearchForm filters={filters} onSearch={(q, location) => update({ q, location })} />
-
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          <UrlFilterSelect label="Category" param="category" anyLabel="All" options={CATEGORY_OPTIONS} />
-          <DateFilter
-            label="From"
-            value={filters.from}
-            max={dateError ? undefined : filters.to}
-            invalid={dateError?.field === "from"}
-            onChange={(from) => update({ from })}
-          />
-          <DateFilter
-            label="To"
-            value={filters.to}
-            min={dateError ? undefined : filters.from}
-            invalid={dateError?.field === "to"}
-            onChange={(to) => update({ to })}
-          />
-        </div>
-
-        {dateError && (
-          <p id="date-error" role="alert" className="mt-2 text-sm font-medium text-(--color-danger)">
-            <span aria-hidden="true">! </span>
-            {dateError.message}
-          </p>
-        )}
-
-        <div className="mt-3 flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          {/* Always rendered: a live region must exist before its text changes to be announced. */}
-          <p aria-live="polite" aria-atomic="true" className="text-sm text-(--color-text-muted)">
-            {data && !isFetching && !isError && !dateError ? showingMessage(data) : ""}
-          </p>
-          {activeCount > 0 && (
-            <Button variant="ghost" className="min-h-11" onClick={clearFilters}>
-              Clear filters
-            </Button>
-          )}
-        </div>
-      </section>
-
-      <section aria-labelledby="results-heading" aria-busy={isFetching} className="mt-8">
-        <h2
-          id="results-heading"
-          ref={resultsHeadingRef}
-          tabIndex={-1}
-          className="mb-4 rounded-sm text-xl font-semibold text-(--color-text) focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)]"
+      <div className="mt-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3">
+        <div
+          ref={chipsRef}
+          role="group"
+          aria-label="Category"
+          // Phones: one row that scrolls sideways from the screen's left edge to the Date and area
+          // button. From 768px: wraps.
+          className="-ml-4 flex gap-2 overflow-x-auto py-1 pl-4 scrollbar-none sm:-ml-8 sm:pl-8 md:ml-0 md:flex-wrap md:overflow-visible md:pl-0"
         >
-          Upcoming events
-        </h2>
-        {renderResults()}
-      </section>
+          <Chip pressed={!filters.category} onPressedChange={() => update({ category: "" })}>
+            All
+          </Chip>
+          {CATEGORY_OPTIONS.map((option) => (
+            <Chip
+              key={option.value}
+              pressed={filters.category === option.value}
+              onPressedChange={(on) => update({ category: on ? option.value : "" })}
+            >
+              {option.label}
+            </Chip>
+          ))}
+        </div>
+        {/* contents: the button sits in the row's second column, the form spans the row below. */}
+        <DateAreaFilter
+          filters={filters}
+          dateError={dateError}
+          onApply={update}
+          className="contents [&>form]:col-span-2"
+        />
+      </div>
+
+      {/* Always rendered: a live region must exist before its text changes to be announced. */}
+      <p aria-live="polite" aria-atomic="true" className="sr-only">
+        {data && !isFetching && !dateError ? countLabel(total) : ""}
+      </p>
+
+      <div aria-busy={isFetching}>{renderResults()}</div>
     </main>
   );
 }
 
-type SearchFormProps = {
-  filters: EventFilters;
-  onSearch: (q: string, location: string) => void;
+type EventGroupProps = {
+  title: string;
+  events: FairEvent[];
+  now: number;
 };
 
-/** Keyword and location, sent on submit so typing doesn't fire a request per key. */
-function SearchForm({ filters, onSearch }: SearchFormProps) {
-  const [q, setQ] = useState(filters.q);
-  const [location, setLocation] = useState(filters.location);
-  // When the URL changes from outside (Clear filters, Back), show its values again.
-  const [shown, setShown] = useState({ q: filters.q, location: filters.location });
-  if (shown.q !== filters.q || shown.location !== filters.location) {
-    setShown({ q: filters.q, location: filters.location });
-    setQ(filters.q);
-    setLocation(filters.location);
-  }
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onSearch(q.trim(), location.trim());
-  }
+/** "This week" or "Later" with its count. Hidden when empty. Two columns from 1100px. */
+function EventGroup({ title, events, now }: EventGroupProps) {
+  if (events.length === 0) return null;
+  const headingId = `group-${title.toLowerCase().replace(/\s+/g, "-")}`;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:flex-row sm:items-end">
-      <FormField label="Keyword" className="sm:flex-[2]">
-        {(control) => (
-          <Input
-            {...control}
-            type="search"
-            name="q"
-            enterKeyHint="search"
-            autoComplete="off"
-            maxLength={TEXT_MAX}
-            placeholder="e.g. React, design, careers"
-            className="h-11"
-            value={q}
-            onChange={(event) => setQ(event.target.value)}
-          />
-        )}
-      </FormField>
-      <FormField label="Location" className="sm:flex-1">
-        {(control) => (
-          <Input
-            {...control}
-            name="location"
-            autoComplete="off"
-            maxLength={TEXT_MAX}
-            placeholder="e.g. Yaba"
-            className="h-11"
-            value={location}
-            onChange={(event) => setLocation(event.target.value)}
-          />
-        )}
-      </FormField>
-      <Button type="submit" className="min-h-11">
-        Search
-      </Button>
-    </form>
-  );
-}
-
-type DateFilterProps = {
-  label: string;
-  value: string;
-  min?: string;
-  max?: string;
-  invalid: boolean;
-  onChange: (value: string) => void;
-};
-
-function DateFilter({ label, value, min, max, invalid, onChange }: DateFilterProps) {
-  return (
-    <FormField label={label}>
-      {(control) => (
-        <Input
-          {...control}
-          type="date"
-          className="h-11"
-          value={value}
-          min={min || undefined}
-          max={max || undefined}
-          aria-invalid={invalid || undefined}
-          aria-describedby={invalid ? "date-error" : control["aria-describedby"]}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      )}
-    </FormField>
+    <section aria-labelledby={headingId} className="mt-10">
+      <div className="flex items-baseline justify-between gap-4 border-b border-(--color-border) pb-3">
+        <h2 id={headingId} className="text-xl font-bold tracking-tight md:text-2xl">
+          {title}
+        </h2>
+        <p className="text-sm text-(--color-text-muted)">{countLabel(events.length)}</p>
+      </div>
+      <ul className="grid min-[1100px]:grid-cols-2 min-[1100px]:gap-x-10">
+        {events.map((event) => (
+          <li key={event.id} className="min-w-0 border-b border-(--color-border)">
+            <DiscoverEventRow event={event} now={now} />
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

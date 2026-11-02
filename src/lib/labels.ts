@@ -3,8 +3,8 @@
 // - Every map is a Record over a generated type, so if the contract adds a value
 //   (say a new Category), TypeScript fails here until it gets a label.
 
-import type { ApiErrorCode, Category, NoticeKind, Signup, SignupStatus } from "../api/types";
-import type { StatusBadgeTone } from "../shared/ui/status-badge";
+import type { ApiErrorCode, Category, FairEvent, NoticeKind, Signup, SignupStatus } from "../api/types";
+import type { StatusBadgeTone } from "../components/ui/status-badge";
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   TECH: "Tech",
@@ -24,12 +24,31 @@ export const SIGNUP_STATUS_LABELS: Record<SignupStatus, string> = {
 };
 
 // Badge colour per status. Colour is extra: the badge always shows the label as text.
+// Only offers stand out (warning = copper). Success green is for feedback messages such as
+// "Booking confirmed", never for a seat status.
 export const SIGNUP_STATUS_TONES: Record<SignupStatus, StatusBadgeTone> = {
-  GOING: "success",
-  WAITING: "info",
+  GOING: "neutral",
+  WAITING: "neutral",
   OFFERED: "warning",
   OFFER_EXPIRED: "neutral",
   CANCELLED: "neutral",
+};
+
+/** At this many seats left or fewer, an event shows a low-seats warning: "Only 3 seats left". */
+export const LOW_SEATS = 5;
+
+export type SeatState = "open" | "low" | "full";
+
+export function seatState(event: Pick<FairEvent, "seatsAvailable">): SeatState {
+  if (event.seatsAvailable <= 0) return "full";
+  return event.seatsAvailable <= LOW_SEATS ? "low" : "open";
+}
+
+// Low seats are the only seat state that stands out. Full is neutral: the waitlist is still open.
+export const SEAT_STATE_TONES: Record<SeatState, StatusBadgeTone> = {
+  open: "neutral",
+  low: "warning",
+  full: "neutral",
 };
 
 /** "On the waitlist · #2" when the position is known, otherwise the plain status label. */
