@@ -62,10 +62,18 @@ export const eventsApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, { eventId }) => [{ type: "Event", id: eventId }, "EventList"],
     }),
 
-    /** POST /events/{eventId}/cancellation. Safe to repeat. */
+    /** POST /events/{eventId}/cancellation. Safe to repeat. The returned event goes into the cache first. */
     cancelEvent: build.mutation<FairEvent, string>({
       query: (eventId) => ({ path: `/events/${id(eventId)}/cancellation`, method: "POST" }),
       invalidatesTags: (_result, _error, eventId) => [{ type: "Event", id: eventId }, "EventList"],
+      async onQueryStarted(eventId, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(eventsApi.util.upsertQueryData("getEvent", eventId, data));
+        } catch {
+          // The refetch from invalidatesTags shows the true state.
+        }
+      },
     }),
   }),
 });

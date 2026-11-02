@@ -56,3 +56,12 @@ body {
     box-shadow: 0 0 0 14px transparent;
   }
 }
+
+/* Event detail on phones: the booking bar is fixed to the bottom, so the page (and its footer)
+   gets room under it. The bar is display:none from 768px, and :has() only matches a shown bar's
+   element, so the padding is limited to phones by the media query. */
+@media (width < 768px) {
+  body:has([data-booking-bar]) {
+    padding-bottom: 88px;
+  }
+}

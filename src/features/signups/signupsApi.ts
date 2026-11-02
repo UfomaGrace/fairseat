@@ -1,8 +1,8 @@
 // signupsApi: an attendee's seats. Every change here refreshes the event, the lists, my sign-ups
 // and my notices, also when it fails (e.g. 409), so the screen shows what the server decided.
 //
-// createSignup also writes the returned sign-up into the cached event and Discover lists as soon
-// as the server answers, so the row's status badge replaces its Book button at once instead of
+// Every change also writes the returned sign-up into the cached event (createSignup into the
+// Discover lists too) as soon as the server answers, so the screen changes at once instead of
 // after the refetch. Only the server's answer is written (no optimistic update); the refetch then
 // brings the new seat counts.
 import type { MySignupsQuery, Signup, SignupList } from "../../api/types";
@@ -50,12 +50,36 @@ export const signupsApi = baseApi.injectEndpoints({
     cancelSignup: build.mutation<Signup, { signupId: string; eventId: string }>({
       query: ({ signupId }) => ({ path: `/signups/${id(signupId)}/cancellation`, method: "POST" }),
       invalidatesTags: (_result, _error, { eventId }) => signupChanged(eventId),
+      async onQueryStarted({ eventId }, { dispatch, queryFulfilled }) {
+        try {
+          const { data: signup } = await queryFulfilled;
+          dispatch(
+            eventsApi.util.updateQueryData("getEvent", eventId, (draft) => {
+              draft.mySignup = signup;
+            }),
+          );
+        } catch {
+          // The refetch from invalidatesTags shows the true state.
+        }
+      },
     }),
 
     /** POST /signups/{signupId}/acceptance. 409 OFFER_EXPIRED once the 24-hour window has passed. */
     acceptOffer: build.mutation<Signup, { signupId: string; eventId: string }>({
       query: ({ signupId }) => ({ path: `/signups/${id(signupId)}/acceptance`, method: "POST" }),
       invalidatesTags: (_result, _error, { eventId }) => signupChanged(eventId),
+      async onQueryStarted({ eventId }, { dispatch, queryFulfilled }) {
+        try {
+          const { data: signup } = await queryFulfilled;
+          dispatch(
+            eventsApi.util.updateQueryData("getEvent", eventId, (draft) => {
+              draft.mySignup = signup;
+            }),
+          );
+        } catch {
+          // The refetch from invalidatesTags shows the true state.
+        }
+      },
     }),
 
     /** GET /me/signups. scope: upcoming (default), past or all. */

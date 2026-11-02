@@ -2,28 +2,29 @@
 //
 //   <Route element={<Layout />}> ...pages... </Route>
 //
-// - Header: logo, nav (Discover, How it works, plus the role's own pages), keyword search, and
-//   Sign in or the signed-in person. Sticky on phones, where it is short; static from 768px.
-// - Search: a field from 1100px; below that a search button opens the field under the header.
-// - Nav links depend on the role: visitor, ATTENDEE, or ORGANISER/ADMIN. Visitors see the two
-//   public links inline from 768px. Signed-in people get them inline from 1100px, and behind a
-//   Menu button below that (they have more links, plus Sign out).
-// - The menu remembers the page it was opened on, so moving to another page (link, back button)
-//   closes it. Escape closes the menu or the search row.
+// - Header ("Site header component"): white, 68px, a hairline under it, three equal zones.
+//   Logo left; nav centred (Discover, My events when signed in, How it works) as 40px pills, the
+//   current page filled grey; right: the notices bell (attendees; copper dot when there are unseen
+//   notices) and an avatar button that opens the account menu. Signed out: a black "Sign in".
+// - Pills, bell and avatar are 40px to the eye; an invisible ::after stretches each to a 44px target.
+// - Below 768px: logo left, a Menu button right that opens everything (nav, notices, account).
+// - Both menus remember the page they were opened on, so moving to another page closes them.
+//   Escape closes them and returns focus to their button; a click outside closes the account menu.
 // - NavLink sets aria-current="page" on the active link; the styles hang off that.
 // - Pages render their own <main>, so the skip-link target here is a <div>.
-// - Colours, fonts and the focus ring come from styles/tokens.css. Sign in is drawn as a black button.
+// - Search lives on Discover (?q=); the header no longer has a field.
 
-import { Menu, Search, X } from "lucide-react";
-import { useRef, useState, type KeyboardEvent } from "react";
+import { Bell, ChevronDown, Menu, X } from "lucide-react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { IS_MOCK } from "../api/client";
-import type { Role } from "../api/types";
+import type { Role, User } from "../api/types";
+import { ROLE_LABEL } from "../auth/roles";
 import { useAuth } from "../auth/useAuth";
-import { Button } from "../components/ui/button";
+import { useHasUnseenNotices } from "../features/notices/noticesSeen";
 import { cn } from "../lib/cn";
+import { Avatar } from "./avatar/Avatar";
 import { FairSeatLogo } from "./FairSeatLogo";
-import { HeaderSearch } from "./HeaderSearch";
 
 interface NavItem {
   to: string;
@@ -32,72 +33,110 @@ interface NavItem {
   end?: boolean;
 }
 
-const PUBLIC_NAV: readonly NavItem[] = [
-  { to: "/events", label: "Discover" },
-  { to: "/how-it-works", label: "How it works" },
-];
+const DISCOVER: NavItem = { to: "/events", label: "Discover" };
+const HOW_IT_WORKS: NavItem = { to: "/how-it-works", label: "How it works" };
 
-const ORGANISER_NAV: readonly NavItem[] = [
-  ...PUBLIC_NAV,
-  { to: "/organiser/events", label: "My organised events", end: true },
-  { to: "/organiser/events/new", label: "Create event" },
-];
-
-// Record<Role, …> makes TypeScript complain if a new role is added without a nav.
-const NAV_BY_ROLE: Record<Role, readonly NavItem[]> = {
-  ATTENDEE: [...PUBLIC_NAV, { to: "/me/events", label: "My events" }, { to: "/me/notices", label: "Notices" }],
-  ORGANISER: ORGANISER_NAV,
-  ADMIN: ORGANISER_NAV,
+// Record<Role, …> makes TypeScript complain if a new role is added without its pages.
+const MY_EVENTS: Record<Role, NavItem> = {
+  ATTENDEE: { to: "/me/events", label: "My events" },
+  ORGANISER: { to: "/organiser/events", label: "My events", end: true },
+  ADMIN: { to: "/organiser/events", label: "My events", end: true },
 };
+
+/** The account menu's links, under the name. Sign out is added after them. */
+const ACCOUNT_LINKS: Record<Role, readonly NavItem[]> = {
+  ATTENDEE: [{ to: "/me/notices", label: "Notices" }],
+  ORGANISER: [{ to: "/organiser/events/new", label: "Create event" }],
+  ADMIN: [{ to: "/organiser/events/new", label: "Create event" }],
+};
+
+function navFor(user: User | null): NavItem[] {
+  return user ? [DISCOVER, MY_EVENTS[user.role], HOW_IT_WORKS] : [DISCOVER, HOW_IT_WORKS];
+}
 
 const focusRing =
   "focus-visible:outline-(length:--focus-ring-width) focus-visible:outline-offset-(--focus-ring-offset) focus-visible:outline-(--color-focus) focus-visible:outline-solid";
 
-const navLinkClass = cn(
-  "flex min-h-11 items-center rounded-(--radius-md) px-4 font-semibold whitespace-nowrap",
+/** A 40px control with a 44px target. */
+const target44 = "relative after:absolute after:inset-x-0 after:-inset-y-0.5 after:content-['']";
+
+const pillClass = cn(
+  "flex h-10 items-center rounded-full px-4 text-sm font-medium whitespace-nowrap",
   "text-(--color-text-muted) hover:bg-(--color-surface) hover:text-(--color-text)",
   // Active: a filled grey pill in ink, so it isn't shown by colour alone.
   "aria-[current=page]:bg-(--color-surface) aria-[current=page]:text-(--color-text)",
+  target44,
   focusRing,
 );
+
+const menuRowClass = cn(
+  "flex min-h-11 w-full items-center justify-between gap-3 rounded-(--radius-md) px-3 text-left text-sm font-medium",
+  "text-(--color-text) hover:bg-(--color-surface) aria-[current=page]:bg-(--color-surface)",
+  focusRing,
+);
+
+function NewDot({ className }: { className?: string }) {
+  return <span aria-hidden="true" className={cn("size-2 rounded-full bg-(--color-copper)", className)} />;
+}
 
 export function Layout() {
   const { user, signOut } = useAuth();
   const location = useLocation();
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const searchButtonRef = useRef<HTMLButtonElement>(null);
+  const unseen = useHasUnseenNotices(user);
 
-  // The path the menu was opened on. Any other path means it's closed.
+  // The path each menu was opened on. Any other path means it's closed.
   const [menuOpenOn, setMenuOpenOn] = useState<string | null>(null);
+  const [accountOpenOn, setAccountOpenOn] = useState<string | null>(null);
   const menuOpen = menuOpenOn === location.pathname;
-  const [searchOpen, setSearchOpen] = useState(false);
+  const accountOpen = accountOpenOn === location.pathname;
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
 
-  const nav = user ? NAV_BY_ROLE[user.role] : PUBLIC_NAV;
+  const nav = navFor(user);
+
+  // A click (or tap) outside the account menu closes it.
+  useEffect(() => {
+    if (!accountOpen) return;
+    function onPointerDown(event: PointerEvent) {
+      if (event.target instanceof Node && !accountRef.current?.contains(event.target)) setAccountOpenOn(null);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [accountOpen]);
 
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key !== "Escape") return;
-    if (menuOpen) {
+    if (accountOpen) {
+      setAccountOpenOn(null);
+      accountButtonRef.current?.focus();
+    } else if (menuOpen) {
       setMenuOpenOn(null);
       menuButtonRef.current?.focus();
-    } else if (searchOpen) {
-      setSearchOpen(false);
-      searchButtonRef.current?.focus();
     }
   }
 
-  function navList(className: string) {
-    return (
-      <ul className={className}>
-        {nav.map((item) => (
-          <li key={item.to}>
-            <NavLink to={item.to} end={item.end} onClick={() => setMenuOpenOn(null)} className={navLinkClass}>
-              {item.label}
-            </NavLink>
-          </li>
-        ))}
-      </ul>
-    );
+  function closeMenus() {
+    setMenuOpenOn(null);
+    setAccountOpenOn(null);
   }
+
+  const signInLink = (className: string) => (
+    <NavLink
+      to="/login"
+      // Sign in returns to the page the visitor was on.
+      state={{ from: location }}
+      onClick={closeMenus}
+      className={cn(
+        "flex items-center justify-center rounded-full bg-(--color-primary) px-5 text-sm font-semibold whitespace-nowrap",
+        "text-(--color-on-primary) hover:bg-(--color-primary-hover)",
+        focusRing,
+        className,
+      )}
+    >
+      Sign in
+    </NavLink>
+  );
 
   return (
     <div className="flex min-h-dvh flex-col bg-(--color-bg) font-(family-name:--font-sans) text-(--color-text)">
@@ -116,90 +155,170 @@ export function Layout() {
         onKeyDown={handleKeyDown}
         className="sticky top-0 z-40 border-b border-(--color-header-border) bg-(--color-bg) text-(--color-text) md:static"
       >
-        <div className="mx-auto flex max-w-7xl items-center gap-x-2 px-4 py-2 sm:px-8 md:gap-x-6 md:py-4">
-          <Link to="/events" className={cn("flex min-h-11 shrink-0 items-center rounded-(--radius-sm)", focusRing)}>
-            <FairSeatLogo size={26} withWordmark />
+        <div className="mx-auto grid h-[68px] max-w-7xl grid-cols-[1fr_auto] items-center gap-x-4 px-4 sm:px-8 md:grid-cols-3">
+          <Link
+            to="/events"
+            onClick={closeMenus}
+            className={cn("flex min-h-11 items-center justify-self-start rounded-(--radius-sm)", focusRing)}
+          >
+            <FairSeatLogo size={24} withWordmark />
           </Link>
 
-          <nav aria-label="Main" className={cn("hidden", user ? "min-[1100px]:block" : "md:block")}>
-            {navList("flex items-center gap-1")}
+          <nav aria-label="Main" className="hidden justify-self-center md:block">
+            <ul className="flex items-center gap-1">
+              {nav.map((item) => (
+                <li key={item.to}>
+                  <NavLink to={item.to} end={item.end} className={pillClass}>
+                    {item.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
           </nav>
 
-          <div className="ml-auto flex items-center gap-2 md:gap-3">
-            <HeaderSearch className="hidden w-60 min-[1100px]:block xl:w-72" />
-            <Button
-              ref={searchButtonRef}
-              variant="ghost"
-              iconOnly
-              aria-label="Search events"
-              aria-expanded={searchOpen}
-              aria-controls={searchOpen ? "header-search" : undefined}
-              onClick={() => setSearchOpen(!searchOpen)}
-              className="size-11 rounded-full min-[1100px]:hidden"
-            >
-              {searchOpen ? <X aria-hidden="true" className="size-5" /> : <Search aria-hidden="true" className="size-5" />}
-            </Button>
-
+          {/* ≥768px: bell and account, or Sign in. */}
+          <div className="hidden items-center gap-2 justify-self-end md:flex">
             {user ? (
               <>
-                <div className="hidden items-center gap-3 min-[1100px]:flex">
-                  <p className="hidden text-sm font-medium xl:block">{user.displayName}</p>
-                  <Button variant="secondary" className="min-h-11 rounded-full px-5" onClick={() => signOut("You've signed out.")}>
-                    Sign out
-                  </Button>
+                {user.role === "ATTENDEE" && (
+                  <Link
+                    to="/me/notices"
+                    aria-label={unseen ? "Notices, new notices" : "Notices"}
+                    className={cn(
+                      "flex size-10 items-center justify-center rounded-full border border-(--color-border)",
+                      "text-(--color-text) hover:bg-(--color-surface)",
+                      target44,
+                      focusRing,
+                    )}
+                  >
+                    <Bell aria-hidden="true" className="size-[18px]" />
+                    {unseen && <NewDot className="absolute top-2 right-2.5 ring-2 ring-(--color-bg)" />}
+                  </Link>
+                )}
+
+                <div ref={accountRef} className="relative">
+                  <button
+                    ref={accountButtonRef}
+                    type="button"
+                    aria-label={`Account: ${user.displayName}`}
+                    aria-expanded={accountOpen}
+                    aria-controls="account-menu"
+                    onClick={() => setAccountOpenOn(accountOpen ? null : location.pathname)}
+                    className={cn(
+                      "flex h-10 items-center gap-1 rounded-full py-1 pr-2 pl-1 hover:bg-(--color-surface)",
+                      target44,
+                      focusRing,
+                    )}
+                  >
+                    <Avatar id={user.id} name={user.displayName} size={32} decorative />
+                    <ChevronDown
+                      aria-hidden="true"
+                      className={cn("size-4 text-(--color-text-muted) transition-transform motion-reduce:transition-none", accountOpen && "rotate-180")}
+                    />
+                  </button>
+
+                  <div
+                    id="account-menu"
+                    className={cn(
+                      "absolute top-full right-0 z-50 mt-2 w-64 flex-col rounded-xl border border-(--color-border) bg-(--color-bg) p-2 shadow-(--shadow-panel)",
+                      accountOpen ? "flex" : "hidden",
+                    )}
+                  >
+                    <div className="px-3 pt-2 pb-3">
+                      <p className="truncate text-sm font-semibold">{user.displayName}</p>
+                      <p className="truncate text-xs text-(--color-text-muted)">
+                        {ROLE_LABEL[user.role]} · {user.email}
+                      </p>
+                    </div>
+                    <ul className="flex flex-col border-t border-(--color-border) pt-2">
+                      {ACCOUNT_LINKS[user.role].map((item) => (
+                        <li key={item.to}>
+                          <NavLink to={item.to} end onClick={closeMenus} className={menuRowClass}>
+                            {item.label}
+                            {item.to === "/me/notices" && unseen && <NewDot />}
+                          </NavLink>
+                        </li>
+                      ))}
+                      <li>
+                        <button type="button" className={menuRowClass} onClick={() => signOut("You've signed out.")}>
+                          Sign out
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-                <Button
-                  ref={menuButtonRef}
-                  variant="ghost"
-                  aria-expanded={menuOpen}
-                  aria-controls="site-menu"
-                  onClick={() => setMenuOpenOn(menuOpen ? null : location.pathname)}
-                  className="min-h-11 min-[1100px]:hidden"
-                >
-                  {menuOpen ? <X aria-hidden="true" className="size-5" /> : <Menu aria-hidden="true" className="size-5" />}
-                  Menu
-                </Button>
               </>
             ) : (
-              <NavLink
-                to="/login"
-                // Sign in returns to the page the visitor was on.
-                state={{ from: location }}
-                className={cn(
-                  "flex min-h-11 items-center rounded-full bg-(--color-primary) px-5 text-sm font-semibold whitespace-nowrap",
-                  "text-(--color-on-primary) hover:bg-(--color-primary-hover)",
-                  focusRing,
-                )}
-              >
-                Sign in
-              </NavLink>
+              signInLink("h-10")
             )}
           </div>
-        </div>
 
-        {searchOpen && (
-          <div id="header-search" className="mx-auto max-w-7xl px-4 pb-3 sm:px-8 min-[1100px]:hidden">
-            <HeaderSearch autoFocus onSearched={() => setSearchOpen(false)} />
-          </div>
-        )}
-
-        {user && (
-          <div
-            id="site-menu"
+          {/* <768px: one Menu button. */}
+          <button
+            ref={menuButtonRef}
+            type="button"
+            aria-expanded={menuOpen}
+            aria-controls="site-menu"
+            onClick={() => setMenuOpenOn(menuOpen ? null : location.pathname)}
             className={cn(
-              "mx-auto max-w-7xl flex-col gap-3 px-4 pb-3 sm:px-8 min-[1100px]:hidden",
-              menuOpen ? "flex" : "hidden",
+              "relative flex min-h-11 items-center gap-2 justify-self-end rounded-full px-3 text-sm font-medium hover:bg-(--color-surface) md:hidden",
+              focusRing,
             )}
           >
-            <nav aria-label="Main">{navList("flex flex-col gap-1")}</nav>
-            <div className="flex items-center justify-between gap-3 border-t border-(--color-header-border) pt-3">
-              <p className="text-sm font-medium">{user.displayName}</p>
-              <Button variant="secondary" className="min-h-11" onClick={() => signOut("You've signed out.")}>
-                Sign out
-              </Button>
+            {menuOpen ? <X aria-hidden="true" className="size-5" /> : <Menu aria-hidden="true" className="size-5" />}
+            Menu
+            {unseen && !menuOpen && <NewDot className="absolute top-2 right-2" />}
+          </button>
+        </div>
+
+        <div
+          id="site-menu"
+          className={cn("mx-auto max-w-7xl flex-col gap-3 px-4 pb-4 sm:px-8 md:hidden", menuOpen ? "flex" : "hidden")}
+        >
+          <nav aria-label="Main">
+            <ul className="flex flex-col gap-1">
+              {nav.map((item) => (
+                <li key={item.to}>
+                  <NavLink to={item.to} end={item.end} onClick={closeMenus} className={menuRowClass}>
+                    {item.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          {user ? (
+            <div className="flex flex-col gap-1 border-t border-(--color-header-border) pt-3">
+              <div className="flex items-center gap-3 px-3 pb-2">
+                <Avatar id={user.id} name={user.displayName} size={32} decorative />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{user.displayName}</p>
+                  <p className="text-xs text-(--color-text-muted)">{ROLE_LABEL[user.role]}</p>
+                </div>
+              </div>
+              <ul className="flex flex-col gap-1">
+                {ACCOUNT_LINKS[user.role].map((item) => (
+                  <li key={item.to}>
+                    <NavLink to={item.to} end onClick={closeMenus} className={menuRowClass}>
+                      {item.label}
+                      {item.to === "/me/notices" && unseen && (
+                        <span className="flex items-center gap-1.5 text-xs text-(--color-copper)">
+                          <NewDot /> New
+                        </span>
+                      )}
+                    </NavLink>
+                  </li>
+                ))}
+                <li>
+                  <button type="button" className={menuRowClass} onClick={() => signOut("You've signed out.")}>
+                    Sign out
+                  </button>
+                </li>
+              </ul>
             </div>
-          </div>
-        )}
+          ) : (
+            signInLink("min-h-11")
+          )}
+        </div>
       </header>
 
       {/* tabIndex={-1} lets the skip link move focus here, not just scroll. */}

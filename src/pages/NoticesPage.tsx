@@ -3,14 +3,17 @@
 // - Newest first. The contract already promises that order; sorting by createdAt again is cheap
 //   and keeps the page right if a mock or a future version doesn't.
 // - The endpoint has no limit/offset (it returns at most 50), so there is no paging.
-// - No read/unread state: the contract has no endpoint for it.
+// - No read/unread state in the contract. Once the list is on screen, this browser remembers the
+//   newest notice as seen (noticesSeen), which clears the copper dot on the header's bell.
 // - Read-only page, so there are no 409s here; the sign-up actions live on My events.
 
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { toApiError } from "../api/client";
 import type { Notice } from "../api/types";
+import { useAuth } from "../auth/useAuth";
 import { NoticeItem } from "../features/notices/NoticeItem";
 import { useListMyNoticesQuery } from "../features/notices/noticesApi";
+import { markNoticesSeen } from "../features/notices/noticesSeen";
 import { EmptyState } from "../components/ui/empty-state";
 import { ErrorState } from "../components/ui/error-state";
 import { Skeleton } from "../components/ui/skeleton";
@@ -19,6 +22,11 @@ const newestFirst = (a: Notice, b: Notice) => Date.parse(b.createdAt) - Date.par
 
 export default function NoticesPage() {
   const { data, error, isLoading, isError, isFetching, refetch } = useListMyNoticesQuery();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user && data) markNoticesSeen(user.id, data.items);
+  }, [user, data]);
 
   if (isLoading) {
     return (
