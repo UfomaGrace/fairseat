@@ -1,51 +1,61 @@
-// CreateEventPage: a new event (POST /events), for organisers and admins.
-//
-// - EventForm does the fields, checks and error display; this page only sends the body.
-// - Success → the new event's page with an "Event created" toast. createEvent invalidates
-//   "EventList", so the organiser's list is fresh when they go back to it.
-
-import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import type { EventCreate } from "../api/types";
+import { toApiError } from "../api/client";
+import { useAuth } from "../auth/useAuth";
 import { EventForm } from "../features/events/EventForm";
 import { useCreateEventMutation } from "../features/events/eventsApi";
 import { cn } from "../lib/cn";
 import { useToast } from "../components/ui/toast";
 
 const focusRing =
-  "focus-visible:[outline:var(--focus-ring-width)_solid_var(--color-focus)] focus-visible:outline-offset-(--focus-ring-offset)";
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)]";
 
 export default function CreateEventPage() {
   const [createEvent] = useCreateEventMutation();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Throws on failure; EventForm shows the error.
   async function create(body: EventCreate) {
-    const event = await createEvent(body).unwrap();
-    toast({ variant: "success", title: "Event created" });
-    navigate(`/events/${encodeURIComponent(event.id)}`);
+    try {
+      const event = await createEvent(body).unwrap();
+      toast({ variant: "success", title: "Event published" });
+      navigate(`/events/${encodeURIComponent(event.id)}`);
+    } catch (error) {
+      const apiError = toApiError(error);
+      if (apiError.code === "NOT_EVENT_OWNER" || apiError.code === "FORBIDDEN_ROLE") {
+        toast({ variant: "error", title: apiError.message });
+        navigate("/organiser/events");
+        return;
+      }
+      throw apiError;
+    }
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8 sm:px-8 sm:py-10">
-      <Link
-        to="/organiser/events"
-        className={cn(
-          "inline-flex min-h-11 items-center gap-2 rounded-sm text-sm font-medium text-(--color-text-muted) hover:text-(--color-text)",
-          focusRing,
-        )}
-      >
-        <ArrowLeft aria-hidden="true" className="size-4" />
-        Back to my events
-      </Link>
+    <main className="min-h-full bg-(--color-surface)">
+      <div className="mx-auto max-w-[1120px] px-4 py-8 sm:px-8 sm:py-10">
+        <nav aria-label="Breadcrumb" className="text-sm text-(--color-text-muted)">
+          <Link to="/organiser/events" className={cn("rounded-sm hover:text-(--color-text)", focusRing)}>
+            Your events
+          </Link>
+          <span aria-hidden="true" className="mx-2">/</span>
+          <span aria-current="page" className="text-(--color-text)">New event</span>
+        </nav>
 
-      <header className="mt-4 mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-(--color-text)">Create event</h1>
-        <p className="mt-2 text-(--color-text-muted)">You'll be the organiser. Fields marked * are required.</p>
-      </header>
+        <header className="mb-7 mt-4">
+          <h1 className="text-3xl font-semibold tracking-tight text-(--color-text)">Create an event</h1>
+          <p className="mt-2 text-(--color-text-muted)">Free to host. Takes about two minutes.</p>
+        </header>
 
-      <EventForm mode="create" submitLabel="Create event" onSubmit={create} />
+        <EventForm
+          mode="create"
+          organiser={user}
+          cancelPath="/organiser/events"
+          submitLabel="Publish event"
+          onSubmit={create}
+        />
+      </div>
     </main>
   );
 }

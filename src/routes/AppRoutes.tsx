@@ -1,15 +1,12 @@
-// AppRoutes: every page. All inside Layout (header + footer) except /login, which draws
-// its own frame (logo + "Explore events" only).
-//
-// - Public: /events, /events/:eventId, /how-it-works, /login
-// - Any signed-in user: /me/notices (the contract only asks for a token).
-// - ATTENDEE: /me/events   ORGANISER/ADMIN: /organiser/…
-//   Each guarded group is one parent route: RequireAuth + RequireRole wrap an <Outlet />,
-//   and the child routes render into that Outlet.
-// - <Titled> sets the browser tab title, e.g. "Events · FairSeat".
-
 import { useEffect, type ReactNode } from "react";
-import { Navigate, Outlet, Route, Routes } from "react-router";
+import {
+  createBrowserRouter,
+  createRoutesFromElements,
+  Navigate,
+  Outlet,
+  Route,
+  RouterProvider,
+} from "react-router";
 import type { Role } from "../api/types";
 import { RequireAuth } from "../auth/RequireAuth";
 import { RequireRole } from "../auth/RequireRole";
@@ -45,20 +42,18 @@ function Guarded({ roles, redirectTo }: { roles: readonly Role[]; redirectTo?: s
   );
 }
 
-function AppRoutes() {
-  return (
-    <Routes>
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <>
       <Route path="login" element={<Titled title="Sign in"><LoginPage /></Titled>} />
 
       <Route element={<Layout />}>
         <Route index element={<Navigate to="/events" replace />} />
 
-        {/* Public */}
         <Route path="events" element={<Titled title="Discover"><EventsPage /></Titled>} />
         <Route path="events/:eventId" element={<Titled title="Event details"><EventDetailPage /></Titled>} />
         <Route path="how-it-works" element={<Titled title="How it works"><HowItWorksPage /></Titled>} />
 
-        {/* Any signed-in user */}
         <Route
           path="me/notices"
           element={
@@ -68,24 +63,16 @@ function AppRoutes() {
           }
         />
 
-        {/* ATTENDEE */}
         <Route element={<Guarded roles={ATTENDEE_ROLES} />}>
           <Route path="me/events" element={<Titled title="My events"><MyEventsPage /></Titled>} />
         </Route>
 
-        {/* ORGANISER / ADMIN */}
         <Route element={<Guarded roles={ORGANISER_ROLES} redirectTo="/events" />}>
-          <Route
-            path="organiser/events"
-            element={<Titled title="Your events"><OrganiserEventsPage /></Titled>}
-          />
+          <Route path="organiser/events" element={<Titled title="Your events"><OrganiserEventsPage /></Titled>} />
         </Route>
 
         <Route element={<Guarded roles={ORGANISER_ROLES} />}>
-          <Route
-            path="organiser/events/new"
-            element={<Titled title="Create event"><CreateEventPage /></Titled>}
-          />
+          <Route path="organiser/events/new" element={<Titled title="Create event"><CreateEventPage /></Titled>} />
           <Route
             path="organiser/events/:eventId/edit"
             element={<Titled title="Edit event"><EditEventPage /></Titled>}
@@ -94,8 +81,10 @@ function AppRoutes() {
 
         <Route path="*" element={<Titled title="Page not found"><NotFoundPage /></Titled>} />
       </Route>
-    </Routes>
-  );
-}
+    </>,
+  ),
+);
 
-export default AppRoutes;
+export default function AppRoutes() {
+  return <RouterProvider router={router} />;
+}

@@ -98,8 +98,6 @@ const SEATS_REQUIRED = "Enter the number of seats.";
  */
 export function eventSchema({ initial, seatsTaken }: EventSchemaOptions = {}) {
   const startChanged = (value: string) => !initial || value !== initial.startsAt;
-  const seatsChanged = (value: number) => !initial || value !== initial.seats;
-
   let seats = Yup.number()
     .typeError(SEATS_REQUIRED)
     .required(SEATS_REQUIRED)
@@ -110,7 +108,7 @@ export function eventSchema({ initial, seatsTaken }: EventSchemaOptions = {}) {
     seats = seats.test(
       "seats-taken",
       seatsTakenMessage(seatsTaken),
-      (value) => value === undefined || !seatsChanged(value) || value >= seatsTaken,
+      (value) => value === undefined || value >= seatsTaken,
     );
   }
 
@@ -207,4 +205,30 @@ export function changedFields(initial: EventFormValues, values: EventFormValues)
   if (after.endsAt !== before.endsAt) changes.endsAt = after.endsAt;
   if (after.seats !== before.seats) changes.seats = after.seats;
   return changes;
+}
+
+/** Whether the current values differ in a way that would produce a PATCH after validation. */
+export function hasEventChanges(initial: EventFormValues, values: EventFormValues): boolean {
+  return (
+    initial.title.trim() !== values.title.trim() ||
+    initial.description.trim() !== values.description.trim() ||
+    initial.category !== values.category ||
+    initial.location.trim() !== values.location.trim() ||
+    initial.startsAt !== values.startsAt ||
+    initial.endsAt !== values.endsAt ||
+    initial.seats !== values.seats
+  );
+}
+
+export function isEventSaveDisabled(
+  mode: "create" | "edit",
+  initial: EventFormValues,
+  values: EventFormValues,
+): boolean {
+  return mode === "edit" && !hasEventChanges(initial, values);
+}
+
+/** Seats released immediately to the first people in line after an increase. */
+export function seatsOfferedByIncrease(currentSeats: number, newSeats: number, waitingCount: number): number {
+  return newSeats > currentSeats && waitingCount > 0 ? Math.min(newSeats - currentSeats, waitingCount) : 0;
 }
