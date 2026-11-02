@@ -13,6 +13,7 @@
 
 import { Form, Formik, useFormikContext, type FormikHelpers } from "formik";
 import { useEffect, useRef, useState, type RefObject } from "react";
+import { useLocation } from "react-router";
 import { ApiError, toApiError } from "../../api/client";
 import type { EventCreate, EventUpdate, FairEvent } from "../../api/types";
 import { applyApiError } from "../../components/form/applyApiError";
@@ -60,6 +61,7 @@ export type EventFormProps = CreateProps | EditProps;
 const LAGOS_HINT = "Lagos time (WAT).";
 
 export function EventForm(props: EventFormProps) {
+  const location = useLocation();
   // Read once: Formik ignores later changes to initialValues, and so do we.
   const [initialValues] = useState(() =>
     props.mode === "edit" ? eventToFormValues(props.event) : EMPTY_EVENT_VALUES,
@@ -68,6 +70,12 @@ export function EventForm(props: EventFormProps) {
   const [unmapped, setUnmapped] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("focus") !== "seats") return;
+    const seats = formRef.current?.elements.namedItem("seats");
+    if (seats instanceof HTMLElement) seats.focus();
+  }, [location.search]);
 
   // seatsTaken is read fresh each render, so the rule follows a refetched event.
   const schema =

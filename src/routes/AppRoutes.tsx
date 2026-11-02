@@ -35,10 +35,10 @@ function Titled({ title, children }: { title: string; children: ReactNode }) {
   return <>{children}</>;
 }
 
-function Guarded({ roles }: { roles: readonly Role[] }) {
+function Guarded({ roles, redirectTo }: { roles: readonly Role[]; redirectTo?: string }) {
   return (
     <RequireAuth>
-      <RequireRole roles={roles}>
+      <RequireRole roles={roles} redirectTo={redirectTo}>
         <Outlet />
       </RequireRole>
     </RequireAuth>
@@ -74,11 +74,14 @@ function AppRoutes() {
         </Route>
 
         {/* ORGANISER / ADMIN */}
-        <Route element={<Guarded roles={ORGANISER_ROLES} />}>
+        <Route element={<Guarded roles={ORGANISER_ROLES} redirectTo="/events" />}>
           <Route
             path="organiser/events"
-            element={<Titled title="My organised events"><OrganiserEventsPage /></Titled>}
+            element={<Titled title="Your events"><OrganiserEventsPage /></Titled>}
           />
+        </Route>
+
+        <Route element={<Guarded roles={ORGANISER_ROLES} />}>
           <Route
             path="organiser/events/new"
             element={<Titled title="Create event"><CreateEventPage /></Titled>}

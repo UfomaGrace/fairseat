@@ -3,7 +3,7 @@
 //   <Route element={<Layout />}> ...pages... </Route>
 //
 // - Header ("Site header component"): white, 68px, a hairline under it, three equal zones.
-//   Logo left; nav centred (Discover, My events when signed in, How it works) as 40px pills, the
+//   Logo left; nav centred (Discover, the signed-in user's events, How it works) as 40px pills, the
 //   current page filled grey; right: the notices bell (copper dot when there are unseen notices)
 //   and an avatar button that opens the account menu. Signed out: a black "Sign in".
 // - Pills, bell and avatar are 40px to the eye; an invisible ::after stretches each to a 44px target.
@@ -14,7 +14,7 @@
 // - Pages render their own <main>, so the skip-link target here is a <div>.
 // - No keyword search in the header. Discover still reads ?q= from the URL, but has no field for it yet.
 
-import { Bell, ChevronDown, Menu, X } from "lucide-react";
+import { Bell, ChevronDown, Menu, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { IS_MOCK } from "../api/client";
@@ -39,8 +39,8 @@ const HOW_IT_WORKS: NavItem = { to: "/how-it-works", label: "How it works" };
 // Record<Role, …> makes TypeScript complain if a new role is added without its pages.
 const MY_EVENTS: Record<Role, NavItem> = {
   ATTENDEE: { to: "/me/events", label: "My events" },
-  ORGANISER: { to: "/organiser/events", label: "My events", end: true },
-  ADMIN: { to: "/organiser/events", label: "My events", end: true },
+  ORGANISER: { to: "/organiser/events", label: "Your events", end: true },
+  ADMIN: { to: "/organiser/events", label: "Your events", end: true },
 };
 
 /** The account menu's links, under the name. Sign out is added after them. */
@@ -62,6 +62,13 @@ const focusRing =
 
 /** A 40px control with a 44px target. */
 const target44 = "relative after:absolute after:inset-x-0 after:-inset-y-0.5 after:content-['']";
+
+const createEventClass = cn(
+  "flex h-10 items-center gap-1.5 rounded-full bg-(--color-primary) px-4 text-sm font-medium whitespace-nowrap text-(--color-on-primary)",
+  "hover:bg-(--color-primary-hover)",
+  target44,
+  focusRing,
+);
 
 const pillClass = cn(
   "flex h-10 items-center rounded-full px-4 text-sm font-medium whitespace-nowrap",
@@ -183,6 +190,12 @@ export function Layout() {
           <div className="hidden items-center gap-2 justify-self-end md:flex">
             {user ? (
               <>
+                {(user.role === "ORGANISER" || user.role === "ADMIN") && (
+                  <Link to={CREATE_EVENT.to} className={createEventClass}>
+                    <Plus aria-hidden="true" className="size-4" />
+                    Create event
+                  </Link>
+                )}
                 <Link
                     to="/me/notices"
                     aria-label={unseen ? "Notices, new notices" : "Notices"}
