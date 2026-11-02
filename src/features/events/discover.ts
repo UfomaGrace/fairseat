@@ -25,6 +25,21 @@ export function activeSignup(event: FairEvent): Signup | null {
   return signup && ACTIVE_STATUSES.includes(signup.status) ? signup : null;
 }
 
+/**
+ * Every loaded page's events in order, each id once (the first copy wins). Offset paging can return
+ * an event twice when events are added or removed between page loads.
+ */
+export function loadedEvents(pages: readonly { items: readonly FairEvent[] }[] | undefined): FairEvent[] {
+  const seen = new Set<string>();
+  const events: FairEvent[] = [];
+  for (const event of (pages ?? []).flatMap((page) => page.items)) {
+    if (seen.has(event.id)) continue;
+    seen.add(event.id);
+    events.push(event);
+  }
+  return events;
+}
+
 /** The soonest bookable event, or undefined when none qualifies. */
 export function pickFeatured(events: readonly FairEvent[], now: number): FairEvent | undefined {
   let featured: FairEvent | undefined;

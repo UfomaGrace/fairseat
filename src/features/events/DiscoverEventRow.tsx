@@ -15,7 +15,7 @@ import { Link } from "react-router";
 import type { FairEvent } from "../../api/types";
 import { Avatar } from "../../components/avatar/Avatar";
 import { EventImage } from "../../components/event-image/EventImage";
-import { formatRelativeDateTime } from "../../lib/format";
+import { formatDateTime } from "../../lib/format";
 import { CATEGORY_LABELS, seatState } from "../../lib/labels";
 import { cn } from "../../lib/cn";
 import { Skeleton } from "../../components/ui/skeleton";
@@ -57,7 +57,7 @@ export function DiscoverEventRow({ event, now }: DiscoverEventRowProps) {
 
       <div className="min-w-0">
         <p className="text-sm text-(--color-text-muted)">
-          <time dateTime={event.startsAt}>{formatRelativeDateTime(event.startsAt, now)}</time>
+          <time dateTime={event.startsAt}>{formatDateTime(event.startsAt, { now, relative: true })}</time>
         </p>
         <h3 className="mt-0.5 text-base leading-snug font-semibold wrap-break-word text-(--color-text) md:text-lg">
           <Link

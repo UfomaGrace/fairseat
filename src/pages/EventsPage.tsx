@@ -21,7 +21,7 @@ import { EmptyState } from "../components/ui/empty-state";
 import { ErrorState } from "../components/ui/error-state";
 import { DateAreaFilter } from "../features/events/DateAreaFilter";
 import { DiscoverEventRow, DiscoverEventRowSkeleton } from "../features/events/DiscoverEventRow";
-import { groupByWeek, pickFeatured } from "../features/events/discover";
+import { groupByWeek, loadedEvents, pickFeatured } from "../features/events/discover";
 import { useListEventPagesInfiniteQuery, type EventPagesQuery } from "../features/events/eventsApi";
 import { FeaturedEvent } from "../features/events/FeaturedEvent";
 import { useEventFilters } from "../features/events/useEventFilters";
@@ -62,7 +62,7 @@ export default function EventsPage() {
       ?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [filters.category]);
 
-  const events = data?.pages.flatMap((page) => page.items) ?? [];
+  const events = loadedEvents(data?.pages);
   const total = data?.pages.at(-1)?.total ?? 0;
   const featured = pickFeatured(events, now);
   const { thisWeek, later } = groupByWeek(events, now, featured?.id);
@@ -71,7 +71,7 @@ export default function EventsPage() {
   async function showMore() {
     const firstNew = events.length;
     const result = await fetchNextPage();
-    const next: FairEvent | undefined = result.data?.pages.flatMap((page) => page.items)[firstNew];
+    const next: FairEvent | undefined = loadedEvents(result.data?.pages)[firstNew];
     // Wait a frame for React to draw the new rows.
     if (next) requestAnimationFrame(() => document.getElementById(`event-${next.id}`)?.focus());
   }

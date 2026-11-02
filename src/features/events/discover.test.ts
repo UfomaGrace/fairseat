@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FairEvent } from "../../api/types";
-import { groupByWeek, pickFeatured, seatMap } from "./discover";
+import { groupByWeek, loadedEvents, pickFeatured, seatMap } from "./discover";
 
 // 1 Nov 2026, 22:30 in Lagos (21:30 UTC).
 const NOW = Date.parse("2026-11-01T21:30:00Z");
@@ -26,6 +26,19 @@ function event(id: string, startsAt: string, changes: Partial<FairEvent> = {}): 
     ...changes,
   };
 }
+
+describe("loadedEvents", () => {
+  it("joins the pages in order and keeps the first copy of a repeated id", () => {
+    const first = event("a", "2026-11-02T07:00:00Z", { title: "first copy" });
+    const pages = [
+      { items: [first, event("b", "2026-11-03T07:00:00Z")] },
+      { items: [event("a", "2026-11-02T07:00:00Z", { title: "second copy" }), event("c", "2026-11-04T07:00:00Z")] },
+    ];
+    expect(loadedEvents(pages).map((e) => e.id)).toEqual(["a", "b", "c"]);
+    expect(loadedEvents(pages)[0]).toBe(first);
+    expect(loadedEvents(undefined)).toEqual([]);
+  });
+});
 
 describe("pickFeatured", () => {
   it("picks the soonest event with a free seat", () => {

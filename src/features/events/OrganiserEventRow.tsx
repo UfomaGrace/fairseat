@@ -2,8 +2,7 @@
 //
 //   <OrganiserEventRow event={event} showOrganiser={isAdmin} />
 //
-// - A row, not EventCard: EventCard's title link covers the whole card, which would swallow
-//   the Edit link. Here the title and Edit are two separate tab stops.
+// - The title and Edit are two separate tab stops: no link stretches over the whole row.
 // - The yaml's status is only SCHEDULED or CANCELLED. Started / Ended follow from the times,
 //   judged against the event's asOf (the server's clock, not the device's).
 // - Edit is hidden once the event has ended or been cancelled; a started event can still be edited.

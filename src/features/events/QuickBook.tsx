@@ -56,7 +56,8 @@ export function QuickBook({ event, appearance = "row", className }: QuickBookPro
 
   if (user && user.role !== "ATTENDEE") return null;
 
-  const signup = activeSignup(event);
+  // Visitors never see a sign-up badge, even if a response carries one (the Prism mock's example does).
+  const signup = user ? activeSignup(event) : null;
   if (signup) {
     return (
       <StatusBadge

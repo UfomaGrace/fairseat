@@ -14,7 +14,7 @@
 import { Link } from "react-router";
 import type { FairEvent } from "../../api/types";
 import { Avatar } from "../../components/avatar/Avatar";
-import { formatClockTime, formatRelativeDay } from "../../lib/format";
+import { formatDateTime, formatRelativeDay } from "../../lib/format";
 import { SEAT_STATE_TONES, seatState } from "../../lib/labels";
 import { cn } from "../../lib/cn";
 import { StatusBadge } from "../../components/ui/status-badge";
@@ -51,9 +51,7 @@ export function FeaturedEvent({ event, now }: FeaturedEventProps) {
           {event.title}
         </h2>
         <p className="mt-3 text-(--color-on-dark-muted)">
-          <time dateTime={event.startsAt}>
-            {day} · {formatClockTime(event.startsAt)}
-          </time>{" "}
+          <time dateTime={event.startsAt}>{formatDateTime(event.startsAt, { now, relative: true })}</time>{" "}
           · {event.location}
         </p>
         <p className="mt-4 flex items-center gap-2 text-sm text-(--color-on-dark-muted)">
