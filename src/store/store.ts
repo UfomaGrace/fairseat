@@ -2,10 +2,10 @@
 //
 // Also, outside React:
 // - saves the session to localStorage whenever it changes;
-// - signs out when expiresAt passes (8 hours after sign-in, no refresh).
+// - signs out when expiresAt passes on startup, while open, or when the tab regains focus.
 
 import { configureStore } from "@reduxjs/toolkit";
-import { authReducer, saveSession } from "./authSlice";
+import { authReducer, hasExpired, saveSession, SESSION_ENDED_NOTICE } from "./authSlice";
 import { baseApi, endSession } from "./baseApi";
 
 export const store = configureStore({
@@ -22,15 +22,23 @@ export type AppDispatch = typeof store.dispatch;
 
 let expiryTimer: ReturnType<typeof setTimeout> | undefined;
 
+function checkSessionExpiry() {
+  const { token, expiresAt } = store.getState().auth;
+  if (token && expiresAt && hasExpired(expiresAt)) {
+    endSession(store.dispatch, SESSION_ENDED_NOTICE, store.getState);
+  }
+}
+
 function scheduleExpiry(expiresAt: string | null) {
   clearTimeout(expiryTimer);
   if (!expiresAt) return;
   const ms = Date.parse(expiresAt) - Date.now();
   // setTimeout can't wait longer than about 24.8 days.
-  expiryTimer = setTimeout(
-    () => endSession(store.dispatch, "Your session expired. Sign in again."),
-    Math.max(0, Math.min(ms, 2 ** 31 - 1)),
-  );
+  expiryTimer = setTimeout(() => {
+    checkSessionExpiry();
+    const currentExpiry = store.getState().auth.expiresAt;
+    if (currentExpiry === expiresAt && !hasExpired(expiresAt)) scheduleExpiry(expiresAt);
+  }, Math.max(0, Math.min(ms, 2 ** 31 - 1)));
 }
 
 let lastAuth = store.getState().auth;
@@ -43,3 +51,7 @@ store.subscribe(() => {
   lastAuth = auth;
   saveSession(auth);
 });
+
+if (typeof window !== "undefined") {
+  window.addEventListener("focus", checkSessionExpiry);
+}

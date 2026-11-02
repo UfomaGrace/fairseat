@@ -6,7 +6,7 @@
 // - The session is kept in localStorage: loaded here when the store starts, saved by
 //   store.ts whenever it changes.
 // - The token lives 8 hours and can't be refreshed. A stored session that has expired is
-//   dropped on load; store.ts signs out when expiresAt passes while the app is open.
+//   kept long enough for store.ts to sign out and send the user back to their current page.
 // - notice is not saved: it only explains the last sign-out.
 
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
@@ -14,6 +14,7 @@ import type { Session, User } from "../api/types";
 import { isRole } from "../auth/roles";
 
 const STORAGE_KEY = "fairseat.session";
+export const SESSION_ENDED_NOTICE = "Your session ended. Sign in again to continue.";
 
 export interface AuthState {
   token: string | null;
@@ -67,7 +68,7 @@ export function loadSession(): Session | null {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
-    if (!isSession(parsed) || hasExpired(parsed.expiresAt)) {
+    if (!isSession(parsed)) {
       localStorage.removeItem(STORAGE_KEY);
       return null;
     }

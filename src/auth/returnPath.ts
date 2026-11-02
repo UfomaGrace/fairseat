@@ -18,3 +18,8 @@ export function safeReturnPath(value: string | null | undefined): string | null 
   if (url.pathname === "/login") return null;
   return url.pathname + url.search + url.hash;
 }
+
+export function loginPathForReturn(value: string | null | undefined): string {
+  const returnPath = safeReturnPath(value);
+  return returnPath ? `/login?returnTo=${encodeURIComponent(returnPath)}` : "/login";
+}

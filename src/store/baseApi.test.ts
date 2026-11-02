@@ -1,7 +1,7 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, type Middleware } from "@reduxjs/toolkit";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Session } from "../api/types";
-import { authReducer, signedIn } from "./authSlice";
+import { authReducer, signedIn, signedOut } from "./authSlice";
 import { sessionApi } from "../features/auth/sessionApi";
 import { eventsApi } from "../features/events/eventsApi";
 import { noticesApi } from "../features/notices/noticesApi";
@@ -16,10 +16,14 @@ const SESSION: Session = {
 
 const EVENT_ID = "e1";
 
-function makeStore() {
+function makeStore(onSignedOut?: () => void) {
+  const countSignOuts: Middleware = () => (next) => (action) => {
+    if (signedOut.match(action)) onSignedOut?.();
+    return next(action);
+  };
   const store = configureStore({
     reducer: { auth: authReducer, [baseApi.reducerPath]: baseApi.reducer },
-    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(baseApi.middleware),
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(countSignOuts, baseApi.middleware),
   });
   store.dispatch(signedIn(SESSION));
   return store;
@@ -66,16 +70,34 @@ describe("baseApi", () => {
     sub.unsubscribe();
   });
 
-  it("signs out on a 401 for a token we sent", async () => {
+  it("signs out once when concurrent requests return 401", async () => {
     fetchMock.mockResolvedValue(json(401, { code: "UNAUTHENTICATED", message: "Sign in.", requestId: "r2" }));
-    const store = makeStore();
+    let signOutCount = 0;
+    const store = makeStore(() => {
+      signOutCount += 1;
+    });
 
-    await store.dispatch(noticesApi.endpoints.listMyNotices.initiate());
+    await Promise.all([
+      store.dispatch(noticesApi.endpoints.listMyNotices.initiate()),
+      store.dispatch(eventsApi.endpoints.getEvent.initiate(EVENT_ID)),
+    ]);
 
     const headers = new Headers(fetchMock.mock.calls[0]?.[1]?.headers);
     expect(headers.get("Authorization")).toBe("Bearer t0k3n");
     expect(store.getState().auth.token).toBeNull();
-    expect(store.getState().auth.notice).toMatch(/session has ended/);
+    expect(store.getState().auth.notice).toBe("Your session ended. Sign in again to continue.");
+    expect(signOutCount).toBe(1);
+  });
+
+  it.each(["FORBIDDEN_ROLE", "NOT_EVENT_OWNER"])("does not sign out on 403 %s", async (code) => {
+    fetchMock.mockResolvedValue(json(403, { code, message: "Not allowed.", requestId: "r4" }));
+    const store = makeStore();
+
+    await store.dispatch(noticesApi.endpoints.listMyNotices.initiate());
+
+    expect(store.getState().auth.token).toBe("t0k3n");
+    expect(store.getState().auth.user?.id).toBe("u1");
+    expect(store.getState().auth.notice).toBeNull();
   });
 
   it("does not sign out on a wrong password (createSession sends no token)", async () => {
