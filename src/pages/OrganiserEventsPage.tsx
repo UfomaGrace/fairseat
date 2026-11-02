@@ -240,7 +240,7 @@ function EventRow({
   const canCancel = tab === "upcoming" && !cancelled;
   return (
     <article className="grid min-w-0 gap-3 rounded-(--radius-card) border border-(--color-border) bg-(--color-bg) p-3 sm:grid-cols-[minmax(0,1fr)_minmax(170px,1.2fr)_auto_auto] sm:items-center sm:gap-4 sm:p-4">
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 items-start gap-3">
         <EventImage
           category={event.category}
           ratio="1 / 1"
