@@ -40,6 +40,20 @@ export function loadedEvents(pages: readonly { items: readonly FairEvent[] }[] |
   return events;
 }
 
+type LoadedPage = { items: readonly FairEvent[]; offset: number; total: number };
+
+/**
+ * The offset of the next page for "Show more events", or undefined when there's nothing more to
+ * load: all `total` events are in, the last page was empty, or the last page brought no event that
+ * wasn't already loaded (offsets shifted, or a mock repeating itself). allPages includes lastPage.
+ */
+export function nextEventsOffset(lastPage: LoadedPage, allPages: readonly LoadedPage[]): number | undefined {
+  const next = lastPage.offset + lastPage.items.length;
+  if (lastPage.items.length === 0 || next >= lastPage.total) return undefined;
+  const earlier = new Set(allPages.slice(0, -1).flatMap((page) => page.items.map((event) => event.id)));
+  return lastPage.items.some((event) => !earlier.has(event.id)) ? next : undefined;
+}
+
 /** The soonest bookable event, or undefined when none qualifies. */
 export function pickFeatured(events: readonly FairEvent[], now: number): FairEvent | undefined {
   let featured: FairEvent | undefined;

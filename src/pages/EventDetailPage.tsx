@@ -14,7 +14,7 @@ import type { FairEvent, User } from "../api/types";
 import { useAuth } from "../auth/useAuth";
 import { useGetEventQuery } from "../features/events/eventsApi";
 import { SignupActions } from "../features/signups/SignupActions";
-import { formatDateTime } from "../lib/format";
+import { formatDateTime, formatRangeEnd } from "../lib/format";
 import { CATEGORY_LABELS, SIGNUP_STATUS_TONES, seatState, signupStatusLabel } from "../lib/labels";
 import { useNow } from "../lib/useNow";
 import { cn } from "../lib/cn";
@@ -175,8 +175,8 @@ export default function EventDetailPage() {
                 <dt className="font-semibold text-(--color-text-muted)">When (Lagos time)</dt>
                 <dd className="mt-0.5 text-(--color-text)">
                   <time dateTime={event.startsAt}>{formatDateTime(event.startsAt)}</time>
-                  {" to "}
-                  <time dateTime={event.endsAt}>{formatDateTime(event.endsAt)}</time>
+                  {" – "}
+                  <time dateTime={event.endsAt}>{formatRangeEnd(event.startsAt, event.endsAt)}</time>
                 </dd>
               </div>
             </div>

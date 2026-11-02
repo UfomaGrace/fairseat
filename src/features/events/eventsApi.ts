@@ -6,6 +6,7 @@
 //   invalidated (e.g. after booking), RTK Query refetches every loaded page in order.
 import type { EventCreate, EventPage, EventQuery, EventUpdate, FairEvent } from "../../api/types";
 import { baseApi } from "../../store/baseApi";
+import { nextEventsOffset } from "./discover";
 
 const id = encodeURIComponent;
 
@@ -23,14 +24,14 @@ export const eventsApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /** GET /events, page after page. The next offset is where the last page ended, until `total` is reached. */
+    /**
+     * GET /events, page after page. The next offset is where the last page ended; paging stops at
+     * `total` or when a page adds no new event (nextEventsOffset), which hides "Show more events".
+     */
     listEventPages: build.infiniteQuery<EventPage, EventPagesQuery, number>({
       infiniteQueryOptions: {
         initialPageParam: 0,
-        getNextPageParam: (lastPage) => {
-          const next = lastPage.offset + lastPage.items.length;
-          return lastPage.items.length > 0 && next < lastPage.total ? next : undefined;
-        },
+        getNextPageParam: nextEventsOffset,
       },
       query: ({ queryArg, pageParam }) => ({
         path: "/events",

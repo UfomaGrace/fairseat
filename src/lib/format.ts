@@ -6,6 +6,8 @@
 //   formatDateTime(iso)                           "Thu, 5 Nov · 7:00 PM"
 //   formatDateTime(iso, { now })                  "Fri, 8 Jan 2027 · 12:00 PM" (another year)
 //   formatDateTime(iso, { now, relative: true })  "Tomorrow · 8:00 AM" (Discover)
+//   formatTimeRange(start, end)                   "Sat, 7 Nov · 4:00 PM – 7:00 PM"
+//                                                 "Sat, 7 Nov · 8:00 PM – Sun, 8 Nov · 1:00 AM"
 //
 // - The year is added only when it isn't the current year. Without `now`, "current" means the
 //   year when the app loaded, so render never reads the clock (pass useNow's value to be exact).
@@ -85,6 +87,26 @@ export function formatDateTime(isoDateTime: string, { now = LOADED_AT, relative 
   const day = relative ? formatRelativeDay(isoDateTime, now) : calendarDay(time, now);
   const clock = partsOf(CLOCK_FORMAT, time);
   return `${day} · ${clock.hour}:${clock.minute} ${clock.dayPeriod.toUpperCase()}`;
+}
+
+/**
+ * The end of a range: just "7:00 PM" when it falls on the start's Lagos day, otherwise the full
+ * "Sun, 8 Nov · 1:00 AM". Lets a page wrap start and end in their own <time> elements.
+ */
+export function formatRangeEnd(startIso: string, endIso: string, options: DateTimeOptions = {}): string {
+  const start = Date.parse(startIso);
+  const end = Date.parse(endIso);
+  if (Number.isNaN(end)) return endIso;
+  if (!Number.isNaN(start) && lagosDayNumber(start) === lagosDayNumber(end)) {
+    const clock = partsOf(CLOCK_FORMAT, end);
+    return `${clock.hour}:${clock.minute} ${clock.dayPeriod.toUpperCase()}`;
+  }
+  return formatDateTime(endIso, { ...options, relative: false });
+}
+
+/** "Sat, 7 Nov · 4:00 PM – 7:00 PM"; the date is repeated only when the event spans days. */
+export function formatTimeRange(startIso: string, endIso: string, options: DateTimeOptions = {}): string {
+  return `${formatDateTime(startIso, options)} – ${formatRangeEnd(startIso, endIso, options)}`;
 }
 
 /** True for a real calendar day written "YYYY-MM-DD" (the yaml's `format: date`). "2026-02-30" is false. */

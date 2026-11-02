@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDateTime, formatRelativeDay, lagosDaysFromToday } from "./format";
+import { formatDateTime, formatRangeEnd, formatRelativeDay, formatTimeRange, lagosDaysFromToday } from "./format";
 
 // 1 Nov 2026, 22:30 in Lagos (21:30 UTC).
 const NOW = Date.parse("2026-11-01T21:30:00Z");
@@ -48,6 +48,36 @@ describe("formatDateTime", () => {
         "Fri, 8 Jan 2027 · 12:00 PM",
       );
     });
+  });
+});
+
+describe("formatTimeRange", () => {
+  it("shows the date once when start and end are the same Lagos day", () => {
+    expect(formatTimeRange("2026-11-07T15:00:00Z", "2026-11-07T18:00:00Z", { now: NOW })).toBe(
+      "Sat, 7 Nov · 4:00 PM – 7:00 PM",
+    );
+    // 22:30 UTC is 11:30 PM in Lagos: still the same day.
+    expect(formatTimeRange("2026-11-07T19:00:00Z", "2026-11-07T22:30:00Z", { now: NOW })).toBe(
+      "Sat, 7 Nov · 8:00 PM – 11:30 PM",
+    );
+  });
+
+  it("repeats the date when the event runs past midnight in Lagos", () => {
+    // 23:30 UTC on the 7th is already 8 Nov in Lagos, though UTC says the same day.
+    expect(formatTimeRange("2026-11-07T19:00:00Z", "2026-11-07T23:30:00Z", { now: NOW })).toBe(
+      "Sat, 7 Nov · 8:00 PM – Sun, 8 Nov · 12:30 AM",
+    );
+    expect(formatTimeRange("2026-12-31T20:00:00Z", "2027-01-01T02:00:00Z", { now: NOW })).toBe(
+      "Thu, 31 Dec · 9:00 PM – Fri, 1 Jan 2027 · 3:00 AM",
+    );
+  });
+
+  it("gives just the end time from formatRangeEnd on the same day", () => {
+    expect(formatRangeEnd("2026-11-07T15:00:00Z", "2026-11-07T18:00:00Z", { now: NOW })).toBe("7:00 PM");
+  });
+
+  it("returns an unparseable end as is", () => {
+    expect(formatRangeEnd("2026-11-07T15:00:00Z", "later")).toBe("later");
   });
 });
 

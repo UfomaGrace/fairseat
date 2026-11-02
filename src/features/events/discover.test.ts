@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FairEvent } from "../../api/types";
-import { groupByWeek, loadedEvents, pickFeatured, seatMap } from "./discover";
+import { groupByWeek, loadedEvents, nextEventsOffset, pickFeatured, seatMap } from "./discover";
 
 // 1 Nov 2026, 22:30 in Lagos (21:30 UTC).
 const NOW = Date.parse("2026-11-01T21:30:00Z");
@@ -37,6 +37,32 @@ describe("loadedEvents", () => {
     expect(loadedEvents(pages).map((e) => e.id)).toEqual(["a", "b", "c"]);
     expect(loadedEvents(pages)[0]).toBe(first);
     expect(loadedEvents(undefined)).toEqual([]);
+  });
+});
+
+describe("nextEventsOffset", () => {
+  const a = event("a", "2026-11-02T07:00:00Z");
+  const b = event("b", "2026-11-03T07:00:00Z");
+  const c = event("c", "2026-11-04T07:00:00Z");
+
+  it("continues from where the last page ended", () => {
+    const first = { items: [a, b], offset: 0, total: 5 };
+    expect(nextEventsOffset(first, [first])).toBe(2);
+  });
+
+  it("stops once total is reached or a page is empty", () => {
+    const last = { items: [c], offset: 2, total: 3 };
+    expect(nextEventsOffset(last, [{ items: [a, b], offset: 0, total: 3 }, last])).toBeUndefined();
+    const empty = { items: [], offset: 2, total: 5 };
+    expect(nextEventsOffset(empty, [{ items: [a, b], offset: 0, total: 5 }, empty])).toBeUndefined();
+  });
+
+  it("stops when a page adds no event that wasn't already loaded", () => {
+    const first = { items: [a, b], offset: 0, total: 22 };
+    const repeat = { items: [b, a], offset: 2, total: 22 };
+    expect(nextEventsOffset(repeat, [first, repeat])).toBeUndefined();
+    const partlyNew = { items: [b, c], offset: 2, total: 22 };
+    expect(nextEventsOffset(partlyNew, [first, partlyNew])).toBe(4);
   });
 });
 
