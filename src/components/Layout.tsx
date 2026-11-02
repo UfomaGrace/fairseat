@@ -25,6 +25,7 @@ import { useHasUnseenNotices } from "../features/notices/noticesSeen";
 import { cn } from "../lib/cn";
 import { Avatar } from "./avatar/Avatar";
 import { FairSeatLogo } from "./FairSeatLogo";
+import { RouteContent } from "../routes/RouteContent";
 
 interface NavItem {
   to: string;
@@ -337,7 +338,9 @@ export function Layout() {
 
       {/* tabIndex={-1} lets the skip link move focus here, not just scroll. */}
       <div id="main" tabIndex={-1} className="flex-1 focus:outline-none">
-        <Outlet />
+        <RouteContent>
+          <Outlet />
+        </RouteContent>
       </div>
 
       <footer className="border-t border-(--color-border) bg-(--color-surface)">

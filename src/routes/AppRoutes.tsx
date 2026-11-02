@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { lazy, useEffect, useRef, type ComponentType, type ReactNode } from "react";
 import {
   createBrowserRouter,
   createRoutesFromElements,
@@ -17,16 +17,27 @@ import { RequireRole } from "../auth/RequireRole";
 import { Layout } from "../components/Layout";
 import { useToast } from "../components/ui/toast";
 import { SESSION_ENDED_NOTICE } from "../store/authSlice";
-import CreateEventPage from "../pages/CreateEventPage";
-import EditEventPage from "../pages/EditEventPage";
-import EventDetailPage from "../pages/EventDetailPage";
 import EventsPage from "../pages/EventsPage";
-import HowItWorksPage from "../pages/HowItWorksPage";
-import LoginPage from "../pages/LoginPage";
-import MyEventsPage from "../pages/MyEventsPage";
-import NoticesPage from "../pages/NoticesPage";
-import NotFoundPage from "../pages/NotFoundPage";
-import OrganiserEventsPage from "../pages/OrganiserEventsPage";
+import { RouteChunkLoadError } from "./RouteChunkLoadError";
+import { RouteContent } from "./RouteContent";
+
+function lazyRoutePage<T extends { default: ComponentType }>(load: () => Promise<T>) {
+  return lazy(() =>
+    load().catch((error: unknown) => {
+      throw new RouteChunkLoadError(error);
+    }),
+  );
+}
+
+const CreateEventPage = lazyRoutePage(() => import("../pages/CreateEventPage"));
+const EditEventPage = lazyRoutePage(() => import("../pages/EditEventPage"));
+const EventDetailPage = lazyRoutePage(() => import("../pages/EventDetailPage"));
+const HowItWorksPage = lazyRoutePage(() => import("../pages/HowItWorksPage"));
+const LoginPage = lazyRoutePage(() => import("../pages/LoginPage"));
+const MyEventsPage = lazyRoutePage(() => import("../pages/MyEventsPage"));
+const NoticesPage = lazyRoutePage(() => import("../pages/NoticesPage"));
+const NotFoundPage = lazyRoutePage(() => import("../pages/NotFoundPage"));
+const OrganiserEventsPage = lazyRoutePage(() => import("../pages/OrganiserEventsPage"));
 
 const ATTENDEE_ROLES = ["ATTENDEE"] as const satisfies readonly Role[];
 const ORGANISER_ROLES = ["ORGANISER", "ADMIN"] as const satisfies readonly Role[];
@@ -75,7 +86,14 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <>
       <Route element={<SessionEndHandler />}>
-        <Route path="login" element={<Titled title="Sign in"><LoginPage /></Titled>} />
+        <Route
+          path="login"
+          element={
+            <RouteContent>
+              <Titled title="Sign in"><LoginPage /></Titled>
+            </RouteContent>
+          }
+        />
 
         <Route element={<Layout />}>
           <Route index element={<Navigate to="/events" replace />} />
