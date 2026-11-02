@@ -468,6 +468,8 @@ function LagosDateTimeFields() {
   const startTime = startField.value.slice(11, 16);
   const endTime = endField.value.slice(11, 16);
   const dateId = useId();
+  const startId = useId();
+  const startError = startMeta.touched ? startMeta.error : undefined;
 
   function setDate(nextDate: string) {
     void startHelpers.setValue(`${nextDate}T${startTime}`);
@@ -482,11 +484,16 @@ function LagosDateTimeFields() {
 
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-      <FormField label="Date" required className="col-span-2 sm:col-span-1">
+      <FormField id={dateId} label="Date" required className="col-span-2 sm:col-span-1">
         {(control) => (
           <input
             {...control}
-            id={dateId}
+            aria-invalid={startError ? true : undefined}
+            aria-describedby={
+              startError
+                ? [control["aria-describedby"], `${startId}-error`].filter(Boolean).join(" ")
+                : control["aria-describedby"]
+            }
             type="date"
             required
             value={date}
@@ -495,7 +502,7 @@ function LagosDateTimeFields() {
           />
         )}
       </FormField>
-      <FormField label="Starts" error={startMeta.touched ? startMeta.error : undefined} required>
+      <FormField id={startId} label="Starts" error={startError} required>
         {(control) => (
           <input
             {...control}
@@ -551,7 +558,7 @@ function SeatsField({ event }: { event?: FairEvent }) {
             type="button"
             variant="secondary"
             iconOnly
-            aria-label="Remove one seat"
+            aria-label="Fewer seats"
             disabled={typeof field.value === "number" && field.value <= SEATS_MIN}
             onClick={() => step(-1)}
             className="size-11 rounded-full"
@@ -560,8 +567,8 @@ function SeatsField({ event }: { event?: FairEvent }) {
           </Button>
           <input
             {...control}
-            {...field}
             ref={inputRef}
+            {...field}
             type="number"
             inputMode="numeric"
             min={SEATS_MIN}
@@ -580,13 +587,18 @@ function SeatsField({ event }: { event?: FairEvent }) {
             type="button"
             variant="secondary"
             iconOnly
-            aria-label="Add one seat"
+            aria-label="More seats"
             disabled={typeof field.value === "number" && field.value >= SEATS_MAX}
             onClick={() => step(1)}
             className="size-11 rounded-full"
           >
             <Plus aria-hidden="true" className="size-4" />
           </Button>
+          <span aria-live="polite" aria-atomic="true" className="sr-only">
+            {field.value === ""
+              ? "No number of seats selected"
+              : `${field.value} ${field.value === 1 ? "seat" : "seats"}`}
+          </span>
         </div>
       )}
     </FormField>
@@ -666,6 +678,8 @@ function FocusFirstError({ formRef }: { formRef: RefObject<HTMLFormElement | nul
       first === "category"
         ? formRef.current?.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]') ??
           formRef.current?.querySelector<HTMLElement>('[role="radio"]')
+        : first === "startsAt"
+          ? formRef.current?.querySelector<HTMLElement>('input[type="date"]')
         : first
           ? formRef.current?.elements.namedItem(first)
           : null;

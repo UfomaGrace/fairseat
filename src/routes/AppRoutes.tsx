@@ -55,6 +55,33 @@ function SessionEndHandler() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const handled = useRef(false);
+  const previousPath = useRef(location.pathname);
+
+  useEffect(() => {
+    if (previousPath.current !== location.pathname) {
+      previousPath.current = location.pathname;
+      let frame = 0;
+      const focusHeading = () => {
+        const heading = document.querySelector<HTMLElement>("main h1");
+        if (!heading) return false;
+        heading.tabIndex = -1;
+        heading.focus();
+        return true;
+      };
+      const observer = new MutationObserver(() => {
+        if (focusHeading()) observer.disconnect();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      frame = window.requestAnimationFrame(() => {
+        if (focusHeading()) observer.disconnect();
+      });
+      return () => {
+        observer.disconnect();
+        window.cancelAnimationFrame(frame);
+      };
+    }
+    return undefined;
+  }, [location.pathname]);
 
   useEffect(() => {
     if (notice !== SESSION_ENDED_NOTICE) {

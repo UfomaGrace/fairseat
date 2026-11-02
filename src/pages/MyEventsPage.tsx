@@ -190,7 +190,7 @@ function PageTabs({ scope, upcomingCount, pastCount, onChange }: {
             type="button"
             aria-pressed={selected}
             onClick={() => onChange(value)}
-            className={`min-h-9 rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${
+            className={`min-h-11 rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-focus)] ${
               selected
                 ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
                 : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface)]"
@@ -392,7 +392,7 @@ function Ticket({ signup, scope, now, refresh, announce }: {
   let ticketLabel = "Your place";
   let ticketValue: string;
   let motif = <SeatMotif />;
-  let rightAction = <Button variant="secondary" size="sm" onClick={() => navigate(eventLink())}>View event</Button>;
+  let rightAction = <Button variant="secondary" size="sm" className="min-h-11" onClick={() => navigate(eventLink())}>View event</Button>;
 
   if (scope === "past" && signup.status === "GOING") {
     ticketValue = "Had a seat";
@@ -408,6 +408,7 @@ function Ticket({ signup, scope, now, refresh, announce }: {
       <div className="flex flex-wrap items-center justify-end gap-2">
         <Button
           size="sm"
+          className="min-h-11"
           loading={actions.accepting}
           disabled={offerEnded}
           onClick={(event) => {
@@ -419,7 +420,7 @@ function Ticket({ signup, scope, now, refresh, announce }: {
         </Button>
         <ConfirmDialog
           trigger={
-            <Button variant="secondary" size="sm" loading={actions.cancellingSignup} onClick={(event) => event.stopPropagation()}>
+            <Button variant="secondary" size="sm" className="min-h-11" loading={actions.cancellingSignup} onClick={(event) => event.stopPropagation()}>
               Decline
             </Button>
           }
@@ -441,6 +442,7 @@ function Ticket({ signup, scope, now, refresh, announce }: {
         <Button
           variant="secondary"
           size="sm"
+          className="min-h-11"
           loading={actions.booking}
           onClick={(event) => {
             event.stopPropagation();
@@ -454,11 +456,11 @@ function Ticket({ signup, scope, now, refresh, announce }: {
   } else if (cancelledByEvent) {
     ticketLabel = "What happened";
     ticketValue = "Cancelled by the organiser";
-    rightAction = <Button variant="secondary" size="sm" onClick={() => navigate(eventLink())}>Details</Button>;
+    rightAction = <Button variant="secondary" size="sm" className="min-h-11" onClick={() => navigate(eventLink())}>Details</Button>;
   } else if (cancelledByPerson) {
     ticketLabel = "What happened";
     ticketValue = scope === "past" ? "Gave up seat" : "You gave up your seat";
-    rightAction = <Button variant="secondary" size="sm" onClick={() => navigate(eventLink())}>Details</Button>;
+    rightAction = <Button variant="secondary" size="sm" className="min-h-11" onClick={() => navigate(eventLink())}>Details</Button>;
   } else if (signup.status === "WAITING") {
     ticketValue = signup.waitingPosition ? `#${signup.waitingPosition} in line` : "In line";
     motif = <LineMotif position={signup.waitingPosition} />;

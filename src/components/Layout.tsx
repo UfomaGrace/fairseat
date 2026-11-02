@@ -159,7 +159,7 @@ export function Layout() {
           focusRing,
         )}
       >
-        Skip to main content
+        Skip to content
       </a>
 
       <header

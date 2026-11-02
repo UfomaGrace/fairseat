@@ -12,7 +12,7 @@
 
 import type { FairEvent } from "../../api/types";
 import { cn } from "../../lib/cn";
-import { ROOM_GRID_MAX_SEATS, roomCounts, roomLabel, roomLayout, type SeatKind } from "./roomSeats";
+import { ROOM_GRID_MAX_SEATS, roomCounts, roomLayout, type SeatKind } from "./roomSeats";
 
 const SEAT_COLOURS: Record<SeatKind, string> = {
   going: "bg-(--color-surface-darker)",
@@ -22,7 +22,7 @@ const SEAT_COLOURS: Record<SeatKind, string> = {
 
 const PULSE = "motion-safe:animate-[seat-pulse_1.4s_ease-out_500ms_1] motion-reduce:animate-none";
 
-type SeatMapEvent = Pick<FairEvent, "id" | "seats" | "goingCount" | "offeredCount" | "seatsAvailable" | "status">;
+type SeatMapEvent = Pick<FairEvent, "id" | "seats" | "goingCount" | "offeredCount" | "seatsAvailable" | "waitingCount" | "status">;
 
 export type SeatMapProps = {
   event: SeatMapEvent;
@@ -34,28 +34,30 @@ export type SeatMapProps = {
 
 export function SeatMap({ event, decorative = false, legend = true, className }: SeatMapProps) {
   const counts = roomCounts(event);
-  const label = roomLabel(counts);
+  const taken = counts.total - counts.free;
+  const summary = `${taken} of ${counts.total} seats taken, ${event.waitingCount} ${
+    event.waitingCount === 1 ? "person" : "people"
+  } in line`;
 
   // A cancelled event has no room to book: empty outlines, no colours, no legend.
   if (event.status === "CANCELLED") {
     return (
-      <div
-        {...(decorative ? { "aria-hidden": true } : { role: "img", "aria-label": "The room: this event was cancelled" })}
-        className={cn("mx-auto grid w-full max-w-[420px] grid-cols-10 gap-1.5 sm:gap-2", className)}
-      >
-        {Array.from({ length: Math.min(counts.total, ROOM_GRID_MAX_SEATS) }, (_, i) => (
-          <span key={i} className="aspect-[1/0.9] rounded-t-[45%] rounded-b-[3px] border border-(--color-border-input)" />
-        ))}
+      <div className={className}>
+        {!decorative && <p className="sr-only">The room was cancelled. {summary}.</p>}
+        <div aria-hidden="true" className="mx-auto grid w-full max-w-[420px] grid-cols-10 gap-1.5 sm:gap-2">
+          {Array.from({ length: Math.min(counts.total, ROOM_GRID_MAX_SEATS) }, (_, i) => (
+            <span key={i} className="aspect-[1/0.9] rounded-t-[45%] rounded-b-[3px] border border-(--color-border-input)" />
+          ))}
+        </div>
       </div>
     );
   }
 
-  const imageProps = decorative ? { "aria-hidden": true } : { role: "img", "aria-label": `The room: ${label}` };
-
   return (
     <div className={cn("min-w-0", className)}>
+      {!decorative && <p className="sr-only">{summary}</p>}
       {counts.total > ROOM_GRID_MAX_SEATS ? (
-        <div {...imageProps} className="flex h-4 w-full overflow-hidden rounded-full bg-(--color-surface-darker)">
+        <div aria-hidden="true" className="flex h-4 w-full overflow-hidden rounded-full bg-(--color-surface-darker)">
           {(["going", "offered", "free"] as const).map((kind) =>
             counts[kind] > 0 ? (
               <span
@@ -68,7 +70,7 @@ export function SeatMap({ event, decorative = false, legend = true, className }:
         </div>
       ) : (
         // Capped at 420px so seats stay seat-sized (about 34px) in a wide column.
-        <div {...imageProps} className="mx-auto max-w-[420px]">
+        <div aria-hidden="true" className="mx-auto max-w-[420px]">
           <div className="mx-auto mb-3 h-1.5 w-1/3 rounded-full bg-(--color-surface-darker)" />
           <div className="grid grid-cols-10 gap-1.5 sm:gap-2">
             {roomLayout(event).map((kind, i) => (

@@ -12,6 +12,23 @@ body {
   font-family: var(--font-sans);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
+
+@layer base {
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
 /*
   In the base layer so Tailwind tracking-* utilities on a heading still win. No colour here:
   headings inherit it, so they stay white inside dark sections such as the intro.

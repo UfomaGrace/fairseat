@@ -5,9 +5,8 @@
 //
 // - now comes from the caller, so the caller (which disables "Accept seat") and the countdown
 //   always agree on when the offer has expired.
-// - The ticking number is not a live region: a screen reader would read it out every second.
-//   The fixed deadline sits under it in Lagos time, and the "expired" line is role="status",
-//   so it is announced once when it appears.
+// - The ticking number and expiry message are not live regions, so clock updates are not
+//   announced. User-triggered booking changes are announced by the action's toast.
 
 import { formatDateTime } from "../../lib/format";
 
@@ -34,7 +33,7 @@ export function OfferCountdown({ expiresAt, now }: OfferCountdownProps) {
 
   if (msLeft <= 0) {
     return (
-      <p role="status" className="text-sm font-medium text-(--color-warning)">
+      <p className="text-sm font-medium text-(--color-warning)">
         This offer has expired. Checking for the latest details…
       </p>
     );

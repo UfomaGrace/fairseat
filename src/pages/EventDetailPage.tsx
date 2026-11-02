@@ -16,7 +16,7 @@
 //   ErrorState with Retry and "Reference: <requestId>". Times show in Africa/Lagos (lib/format).
 
 import { CalendarPlus, Link2, MapPin } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router";
 import { toApiError } from "../api/client";
 import type { FairEvent } from "../api/types";
@@ -30,7 +30,6 @@ import { Skeleton } from "../components/ui/skeleton";
 import { useToast } from "../components/ui/toast";
 import { BookingBar, BookingPanel, BookingSheet, OfferWatch, type BookingPanelProps } from "../features/events/BookingPanel";
 import { bookingState, relativeDayLabel } from "../features/events/bookingState";
-import { bookingAnnouncement } from "../features/events/bookingText";
 import { useGetEventQuery } from "../features/events/eventsApi";
 import { MORE_FROM_ID, MoreFromOrganiser } from "../features/events/MoreFromOrganiser";
 import { firstName, useMoreFromOrganiser } from "../features/events/organiserEvents";
@@ -113,23 +112,15 @@ function EventDetail({ event, busy }: { event: FairEvent; busy: boolean }) {
   const signInHref = `/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`;
   const panel: BookingPanelProps = { event, state, actions, now, signInHref, signedIn: !!user };
 
-  // Announce a change of state once, not on first render ("adjusting state while rendering").
-  const announcement = bookingAnnouncement(event, state);
-  const [lastAnnouncement, setLastAnnouncement] = useState(announcement);
-  const [spoken, setSpoken] = useState("");
-  if (announcement !== lastAnnouncement) {
-    setLastAnnouncement(announcement);
-    setSpoken(announcement);
-  }
+  useEffect(() => {
+    document.title = `${event.title} · FairSeat`;
+  }, [event.title]);
 
   const organiserName = firstName(event.organiser.displayName);
 
   return (
     <main aria-busy={busy} className="pb-16">
       {state.kind === "offer" && <OfferWatch eventId={event.id} signup={state.signup} now={now} />}
-      <p role="status" className="sr-only">
-        {spoken}
-      </p>
 
       <CategoryBand event={event} now={now} />
 

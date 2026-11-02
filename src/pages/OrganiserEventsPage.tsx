@@ -1,5 +1,5 @@
 import { CalendarDays, Check, Copy, MoreHorizontal, Plus, Users } from "lucide-react";
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { toApiError } from "../api/client";
 import type { FairEvent } from "../api/types";
@@ -78,6 +78,7 @@ function SeatBar({ event }: { event: FairEvent }) {
   const goingWidth = Math.min(100, (event.goingCount / seats) * 100);
   const offeredWidth = Math.min(100 - goingWidth, (event.offeredCount / seats) * 100);
   const free = Math.max(0, event.seats - event.goingCount - event.offeredCount);
+  const taken = event.goingCount + event.offeredCount;
   const segments = [
     { label: `${event.goingCount} going`, className: "bg-(--color-seat-going)" },
     ...(event.offeredCount > 0
@@ -91,14 +92,16 @@ function SeatBar({ event }: { event: FairEvent }) {
   return (
     <div className="min-w-0 flex-1">
       <div
-        role="img"
-        aria-label={`${event.goingCount} going, ${event.offeredCount} offered, ${free} free of ${event.seats} seats`}
+        aria-hidden="true"
         className="flex h-1.5 overflow-hidden rounded-full bg-(--color-surface-darker)"
       >
         <span className="bg-(--color-seat-going)" style={{ width: `${goingWidth}%` }} />
         <span className="bg-(--color-seat-offered)" style={{ width: `${offeredWidth}%` }} />
       </div>
-      <p className="mt-1.5 flex flex-wrap gap-x-1 text-[11px] leading-4 text-(--color-text-muted)">
+      <p className="sr-only">
+        {taken} of {event.seats} seats taken, {event.waitingCount} {event.waitingCount === 1 ? "person" : "people"} in line
+      </p>
+      <p aria-hidden="true" className="mt-1.5 flex flex-wrap gap-x-1 text-[11px] leading-4 text-(--color-text-muted)">
         {segments.map((segment, index) => (
           <span key={segment.label} className="inline-flex items-center gap-1 whitespace-nowrap">
             {index > 0 && <span aria-hidden="true">·</span>}
@@ -137,29 +140,64 @@ function ActionMenu({
   onCancel: () => void;
 }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
-  const closeMenu = () => {
+  const summaryRef = useRef<HTMLElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = (restoreFocus = false) => {
     if (detailsRef.current) detailsRef.current.open = false;
+    setMenuOpen(false);
+    if (restoreFocus) summaryRef.current?.focus();
+  };
+  function handleMenuKeyDown(event: KeyboardEvent<HTMLDetailsElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeMenu(true);
+      return;
+    }
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const items = Array.from(detailsRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+    if (items.length === 0) return;
+    event.preventDefault();
+    const activeIndex = items.indexOf(document.activeElement as HTMLElement);
+    const nextIndex =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? items.length - 1
+          : activeIndex < 0
+            ? 0
+            : (activeIndex + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+    items[nextIndex]?.focus();
   };
   return (
-    <details ref={detailsRef} className="group relative">
+    <details
+      ref={detailsRef}
+      onToggle={(event) => setMenuOpen(event.currentTarget.open)}
+      onKeyDown={handleMenuKeyDown}
+      className="group relative"
+    >
       <summary
+        ref={summaryRef}
         aria-label={`More actions for ${event.title}`}
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
         className={`flex size-11 cursor-pointer list-none items-center justify-center rounded-full text-(--color-text-muted) hover:bg-(--color-surface) [&::-webkit-details-marker]:hidden ${focusRing}`}
       >
         <MoreHorizontal aria-hidden="true" className="size-5" />
       </summary>
-      <div className="absolute right-0 z-20 mt-1 flex w-48 flex-col rounded-(--radius-md) border border-(--color-border) bg-(--color-bg) p-1 shadow-(--shadow-panel)">
+      <div role="menu" className="absolute right-0 z-20 mt-1 flex w-48 flex-col rounded-(--radius-md) border border-(--color-border) bg-(--color-bg) p-1 shadow-(--shadow-panel)">
         <Link
+          role="menuitem"
           to={publicEventPath(event)}
-          onClick={closeMenu}
+          onClick={() => closeMenu()}
           className={`flex min-h-11 items-center gap-2 rounded-md px-3 text-sm hover:bg-(--color-surface) ${focusRing}`}
         >
           View public page
         </Link>
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
-            closeMenu();
+            closeMenu(true);
             onCopy();
           }}
           className={`flex min-h-11 items-center gap-2 rounded-md px-3 text-left text-sm hover:bg-(--color-surface) ${focusRing}`}
@@ -169,9 +207,10 @@ function ActionMenu({
         </button>
         {cancellable && (
           <button
+            role="menuitem"
             type="button"
             onClick={() => {
-              closeMenu();
+              closeMenu(true);
               onCancel();
             }}
             className={`flex min-h-11 items-center gap-2 rounded-md px-3 text-left text-sm text-(--color-danger) hover:bg-(--color-error-wash) ${focusRing}`}
