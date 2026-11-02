@@ -23,6 +23,7 @@ import {
   eventSchema,
   eventToFormValues,
   fromLagosInput,
+  hasEventChanges,
   isEventSaveDisabled,
   LOCATION_MAX,
   SEATS_MAX,
@@ -168,7 +169,7 @@ function EventFormBody({
   busy: boolean;
 }) {
   const { values, errors, submitCount } = useFormikContext<EventFormValues>();
-  const dirty = !isEventSaveDisabled("edit", initialValues, values);
+  const dirty = hasEventChanges(initialValues, values);
   const blocker = useBlocker(({ currentLocation, nextLocation }) =>
     dirty && !busy && currentLocation.key !== nextLocation.key,
   );

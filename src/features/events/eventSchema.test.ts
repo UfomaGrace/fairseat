@@ -61,7 +61,8 @@ describe("Lagos time", () => {
 
   it("converts Lagos time independently of the browser's timezone", () => {
     vi.stubEnv("TZ", "America/Los_Angeles");
-    expect(new Date().getTimezoneOffset()).toBe(420);
+    expect(Intl.DateTimeFormat().resolvedOptions().timeZone).toBe("America/Los_Angeles");
+    expect(new Date().getTimezoneOffset()).toBe(480);
     expect(fromLagosInput("2026-11-07T16:00")).toBe("2026-11-07T16:00:00+01:00");
     expect(Date.parse(fromLagosInput("2026-11-07T16:00") ?? "")).toBe(Date.parse("2026-11-07T15:00:00Z"));
     expect(toLagosInput("2026-11-07T15:00:00Z")).toBe("2026-11-07T16:00");
